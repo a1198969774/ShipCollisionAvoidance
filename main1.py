@@ -43,6 +43,7 @@ def get_fixed_samples(env,num_actions,num_samples):
     #return np.array(fixed_samples)
 
 
+
 def main():
     parser = argparse.ArgumentParser(description='Run DQN ')
     parser.add_argument('--env', default='SpaceInvaders-v0')
