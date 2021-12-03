@@ -340,7 +340,7 @@ class DQNAgent():
                 self.save_model(sess, saver, self.date_time)
 
                 env.reset()
-                old_state, action, reward, new_state, is_terminal, _, _1, _2 = env.get_state()
+                old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
             if self.episode == self.args.max_episode:
                 break
 
