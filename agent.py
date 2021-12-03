@@ -244,7 +244,7 @@ class DQNAgent():
     def save_model(self, sess, saver, name):
         # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time + "/model.ckpt")
         # 第二次训练
-        save_path = saver.save(sess, "./saved_result/" + str(name) + "/model.ckpt")
+        save_path = saver.save(sess, "./saved_network/" + str(name) + "/model.ckpt")
     def fit1(self,sess, saver, env):
         goal = env.reset()
         old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
@@ -323,7 +323,7 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if step_for_newenv <= 700:
+                if step_for_newenv < 700:
                     plt.plot(x_list, y_list)
                     plt.plot(goal[0], goal[1],marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
