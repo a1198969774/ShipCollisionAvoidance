@@ -1,11 +1,14 @@
 """Main DQN agent."""
+import datetime
 
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 import random
-from huberLoss import mean_huber_loss, weighted_huber_loss
 
+from config import Config
+from huberLoss import mean_huber_loss, weighted_huber_loss
+import matplotlib.pyplot as plt
 EPSILON_BEGIN = 1.0
 EPSILON_END = 0.1
 BETA_BEGIN = 0.5   ##??
@@ -53,8 +56,8 @@ class DQNAgent():
         self._update_times = 0
         self._beta = EPSILON_BEGIN
         self._beta_increment = (EPSILON_END-BETA_BEGIN)/2000000.0
-        self._epsilon = EPSILON_BEGIN if is_noisy else 0.
-        self._epsilon_increment =  (EPSILON_END - EPSILON_BEGIN)/2000000.0 if is_noisy==0 else 0.
+        self._epsilon = EPSILON_BEGIN if is_noisy else 1
+        self._epsilon_increment =  (EPSILON_END - EPSILON_BEGIN)/2000000.0 if is_noisy == 0 else 0.
         self._action_ph = tf.placeholder(tf.int32,[None,2],'action_ph')
         self._reward_ph = tf.placeholder(tf.float32,name='reward_ph')
         self._is_terminal_ph = tf.placeholder(tf.float32,name='is_terminal_ph')
@@ -63,6 +66,12 @@ class DQNAgent():
         self._error_op,self._train_op = self._get_error_and_train_op(self._reward_ph,self._is_terminal_ph,
                                                                      self._action_ph,self._action_chosen_by_eval_ph,
                                                                      self._loss_weight_ph)
+        self.episode = 0
+        parser = Config.parser
+        self.args = parser.parse_args()
+        self.args.input_shape = tuple(self.args.input_shape)
+
+        self.date_time = str(datetime.date.today())
 
 
     def _get_error_and_train_op(self,reward_ph,
@@ -153,9 +162,8 @@ class DQNAgent():
             return error_op, train_op
 
     def select_action(self,sess,state,epsilon,model):
-        batch_size = len(state)
         if np.random.rand() < epsilon:
-            action = np.random.randint(0,self._num_actions,size=(batch_size,))
+            action = np.random.randint(0,self._num_actions)
         else:
             state = state.astype(np.float32) / 255.0
             feed_dict = {model['input_frames'] :state}
@@ -232,6 +240,110 @@ class DQNAgent():
                         sess.run(self._update_target_params_ops)
             #         break
             # break
+
+    def save_model(self, sess, saver, name):
+        # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time + "/model.ckpt")
+        # 第二次训练
+        save_path = saver.save(sess, "./saved_result/" + str(name) + "/model.ckpt")
+    def fit1(self,sess, saver, env):
+        goal = env.reset()
+        old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
+        #initializition
+        step_for_newenv = 0
+        total_reward = 0
+        plot_action_list = []
+        plot_reward_list = []
+        plot_sub_reward_list = []
+        x_list = []
+        y_list = []
+        heading_list = []
+        while(True):
+            next_action = self.select_action(sess, new_state, self._epsilon, self._eval_model)
+            env.step(next_action)
+            old_state, action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
+            total_reward += reward
+
+            plot_action_list.append(next_action)
+            plot_reward_list.append(reward)
+            plot_sub_reward_list.append(sub_reward)
+            x_list.append(x)
+            y_list.append(y)
+            heading_list.append(heading)
+            #resize
+
+            self._memory.append(old_state, action, reward, new_state, is_terminal)  # 插入数据
+            if self._epsilon > EPSILON_END:
+                self._epsilon += self._epsilon_increment
+            #训练
+            if self._is_per == 1:
+                (old_state_list, action_list, reward_list, new_state_list, is_terminal_list), \
+                idx_list, p_list, sum_p, count = self._memory.sample(self._batch_size)
+            else:
+                old_state_list, action_list, reward_list, new_state_list, is_terminal_list \
+                    = self._memory.sample(self._batch_size)
+
+            feed_dict = {self._target_model['input_frames']: new_state_list.astype(np.float32) / 255.0,
+                         self._eval_model['input_frames']: old_state_list.astype(np.float32) / 255.0,
+                         self._action_ph: list(enumerate(action_list)),
+                         self._reward_ph: np.array(reward_list).astype(np.float32),
+                         self._is_terminal_ph: np.array(is_terminal_list).astype(np.float32),
+                         }
+
+            if self._is_double_dqn:
+                action_chosen_by_online = sess.run(self._eval_model['action'], feed_dict={
+                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                feed_dict[self._action_chosen_by_eval_ph] = list(enumerate(action_chosen_by_online))
+
+            if self._is_per == 1:
+                # Annealing weight beta
+                feed_dict[self._loss_weight_ph] = (np.array(p_list) * count / sum_p) ** (-self._beta)
+                error, _ = sess.run([self._error_op, self._train_op], feed_dict=feed_dict)
+                self._memory.update(idx_list, error)
+            else:
+                sess.run(self._train_op, feed_dict=feed_dict)
+
+            self._update_times += 1
+            if self._beta < BETA_END:
+                self._beta += self._beta_increment
+
+            if self._update_times % self._target_update_freq == 0:
+                sess.run(self._update_target_params_ops)
+
+            step_for_newenv = step_for_newenv + 1
+            if step_for_newenv == self.args.max_step:
+                is_terminal = True
+
+            if is_terminal:
+                # showPath
+                # self.save_model()
+                self.episode += 1
+                # initialization
+                print("episode:%s total_step:%s total_reward:%s epsilon:%s"%( self.episode, step_for_newenv, total_reward, self._epsilon))
+                # plt.plot(plot_reward_list)
+                # plt.show()
+                # plt.plot(plot_action_list)
+                # plt.show()
+                if step_for_newenv <= 700:
+                    plt.plot(x_list, y_list)
+                    plt.plot(goal[0], goal[1],marker='v')
+                    plt.plot(x_list[0], y_list[0], marker='v')
+                    #plt.show()
+                    plt.savefig('./saved_result/' + str(self.episode) + '.png')
+
+                step_for_newenv = 0
+                total_reward = 0
+                plot_action_list = []
+                plot_reward_list = []
+                plot_sub_reward_list = []
+                heading_list = []
+
+                self.save_model(sess, saver, self.date_time)
+
+                env.reset()
+                old_state, action, reward, new_state, is_terminal, _, _1, _2 = env.get_state()
+            if self.episode == self.args.max_episode:
+                break
+
     def _get_error(self, sess, old_state, action, reward, new_state, is_terminal):
         '''
         Get TD error for Prioritized Experience Replay

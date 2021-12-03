@@ -7,3 +7,6 @@
 out
 gen
 __pycache__
+saved_result
+saved_network
+test_img_overlay.py

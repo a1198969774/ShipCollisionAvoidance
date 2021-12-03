@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 def create_conv_network(input_frames,trainable):
-    conv1_W = tf.get_variable(shape=[8,8,4,16],name='conv1_W',
+    conv1_W = tf.get_variable(shape=[8,8,1,16],name='conv1_W',   ## 4-1
                               trainable=trainable,initializer=tf.contrib.layers.xavier_initializer())
     conv1_b = tf.Variable(tf.zeros([16], dtype=tf.float32),
                           name='conv1_b', trainable=trainable)
