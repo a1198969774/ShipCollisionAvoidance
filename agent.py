@@ -57,7 +57,7 @@ class DQNAgent():
         self._beta = EPSILON_BEGIN
         self._beta_increment = (EPSILON_END-BETA_BEGIN)/2000000.0
         self._epsilon = EPSILON_BEGIN if is_noisy else 1
-        self._epsilon_increment =  (EPSILON_END - EPSILON_BEGIN)/2000000.0 if is_noisy == 0 else 0.
+        self._epsilon_increment =  (EPSILON_END - EPSILON_BEGIN)/10000.0 if is_noisy == 0 else 0.
         self._action_ph = tf.placeholder(tf.int32,[None,2],'action_ph')
         self._reward_ph = tf.placeholder(tf.float32,name='reward_ph')
         self._is_terminal_ph = tf.placeholder(tf.float32,name='is_terminal_ph')

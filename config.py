@@ -8,7 +8,7 @@ class Config:
     parser.add_argument('--input_shape', default=(80, 80))
     parser.add_argument('--gamma', default=0.99)
     parser.add_argument('--max_step', default=700)
-    parser.add_argument('--max_episode', default=500)
+    parser.add_argument('--max_episode', default=5000)
     parser.add_argument('--epsilon', default=0.1)
     parser.add_argument('--learning_rate', default=0.00025)
     parser.add_argument('--window_size', default=1, type=int)
