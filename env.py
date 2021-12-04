@@ -56,8 +56,10 @@ class envModel(gym.Env):
         self.args.input_shape = tuple(self.args.input_shape)
         self.action = 0
 
-        self.d_min = 10
+        self.d_min = 20
         self.reset()
+        from gym.envs.classic_control import rendering
+        self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
 
     def reset(self):
         # 管理所有船的列表， reset时先清空
