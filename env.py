@@ -184,6 +184,39 @@ class envModel(gym.Env):
         # 与动态障碍发生碰撞
         # 动态障碍为边长0.8m的正方体
 
+    def test_state(self,state):
+        total = 0
+        list = state.tolist()
+        for i in range(len(list)):
+            for j in range(len(list[i])):
+                for m in range(len(list[i][j])):
+                    if list[i][j][m] != 255.0:
+                        #print(i, j, m)
+                        total += 1
+        print("total point num is：", total)
+
+
+    def test_state1(self, state):
+        total = 0
+        list = state.tolist()
+        for i in range(len(list)):
+            for j in range(len(list[i])):
+                if list[i][j] != 255.0:
+                    # print(i, j)
+                    total += 1
+        print("total point num is：", total)
+        return total
+
+    def test_state2(self, state):
+        total = 0
+        list = state.tolist()
+        for i in range(len(list)):
+            for j in range(len(list[i])):
+                for m in range(len(list[i][j])):
+                    if list[i][j][m][0] != 255.0:
+                        # print(i, j, m)
+                        total += 1
+        print("total point num is：", total)
     def get_state(self):
 
         if self.viewer != None:
@@ -195,18 +228,23 @@ class envModel(gym.Env):
 
         # input1-->相机
         # shape of image_matrix [768,1024,3]
+        #self.test_state(array)
         image_matrix = np.uint8(array)
-        image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
-        # shape of image_matrix [80,80,3]
-        result_image = image_matrix[:]
+        # image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
+        # # shape of image_matrix [80,80,3]
+        # result_image = image_matrix[:]
+        # self.test_state(result_image)
         image_matrix = cv2.cvtColor(image_matrix, cv2.COLOR_RGB2GRAY)
+        image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
+        #self.test_state1(image_matrix1)
         # shape of image_matrix [80,80]
         # image_matrix = np.reshape(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
 
         # print("shape of image matrix={}".format(self.image_matrix.shape))
 
         self.old_state = self.new_state[:] if self.new_state is not None else None
-        self.new_state = image_matrix.reshape((1, 80, 80, 1))
+        self.new_state = image_matrix.reshape((1, self.args.input_shape[0], self.args.input_shape[1], 1))
+        #self.test_state2(self.new_state)
         reward, sub_reward, is_terminal= self.getreward()
         # new_state = np.random.rand(1, 80, 80, 4)
         # new_state = old_state
@@ -215,7 +253,7 @@ class envModel(gym.Env):
 
     def render(self, mode='human'):
         # 按照gym的方式创建一个viewer, 使用self.scale控制缩放大小
-        from gym.envs.classic_control import rendering
+
         if self.viewer is None:
             self.viewer = rendering.Viewer(VIEWPORT_W , VIEWPORT_H )
 

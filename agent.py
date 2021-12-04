@@ -329,7 +329,7 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if total_reward > -500:
+                if step_for_newenv < 700:
                     plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(goal[0], goal[1],marker='v')

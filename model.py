@@ -19,7 +19,7 @@ def create_conv_network(input_frames,trainable):
     # (batch size, 9, 9, 32)
     output2 = tf.nn.relu(conv2 + conv2_b, name='output2')
 
-    flat_output2_size = 8 * 8 * 32
+    flat_output2_size = 16928
     flat_output2 = tf.reshape(output2, [-1, flat_output2_size], name='flat_output2')
 
     return flat_output2, flat_output2_size, [conv1_W, conv1_b, conv2_W, conv2_b]

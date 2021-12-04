@@ -5,7 +5,7 @@ class Config:
     parser = argparse.ArgumentParser(description='Run DQN ')
     parser.add_argument('--env', default='SpaceInvaders-v0')
     parser.add_argument('--seed', default=10703, type=int)
-    parser.add_argument('--input_shape', default=(80, 80))
+    parser.add_argument('--input_shape', default=(200, 200))
     parser.add_argument('--gamma', default=0.99)
     parser.add_argument('--max_step', default=700)
     parser.add_argument('--max_episode', default=5000)
