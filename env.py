@@ -1,28 +1,3 @@
-# import numpy as np
-# class envModel() :
-#     def __init__(self):
-#         self.action_space_n = 4
-#         pass
-#
-#     def reset(self):
-#         pass
-#
-#     def take_action(self, action):
-#         pass
-#
-#     def get_state(self):
-#         old_state = np.random.rand(1, 80, 80, 4)
-#         action = 1
-#         reward = 0
-#         #new_state = np.random.rand(1, 80, 80, 4)
-#         #new_state = old_state
-#         new_state = old_state.copy()
-#         is_terminal = 1
-#
-#         return old_state, action, reward, new_state, is_terminal
-#
-#     def close(self):
-#         print("end")
 import math
 import time
 
@@ -31,6 +6,8 @@ from gym import spaces
 import numpy as np
 import cv2
 from config import Config
+from gym.envs.classic_control import rendering
+
 MAX_SHIP_NUM = 2
 SHIP_TYPE_SELF = 0
 SHIP_TYPE_OTHER = 1
@@ -58,7 +35,6 @@ class envModel(gym.Env):
 
         self.d_min = 20
         self.reset()
-        from gym.envs.classic_control import rendering
         self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
 
     def reset(self):
@@ -248,19 +224,26 @@ class envModel(gym.Env):
             # 从状态中获取坐标、分数、类型
             _x, _y, _s, _t = item[0] * self.scale, item[1] * self.scale, item[2], item[3]
 
-            # transform用于控制物体位置、缩放等
-            transform = rendering.Transform()
-            transform.set_translation(_x , _y )
-
-            # 添加一个⚪，来表示船
-            # 中心点: (x, y)
-            # 半径:
-            # 颜色: 其它船为蓝色、agent船为红/紫色
-            self.viewer.draw_circle(math.sqrt(10 / math.pi), 30, color=(0, 0, 255)).add_attr(transform)
-
+            # # transform用于控制物体位置、缩放等
+            # transform = rendering.Transform()
+            # transform.set_translation(_x , _y )
+            #
+            # # 添加一个⚪，来表示船
+            # # 中心点: (x, y)
+            # # 半径:
+            # # 颜色: 其它船为蓝色、agent船为红/紫色
+            # self.viewer.draw_circle(10, 30, color=(0, 0, 255)).add_attr(transform)
+            self.draw_circle(_x, _y, 5, (0, 0, 255))
+            # self.draw_circle(500, 500, 500, (0, 0, 255))
         # 然后直接渲染（没有考虑性能）
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
+    def draw_circle(self, x, y, r, c):
+        assert isinstance(self.viewer, rendering.Viewer)
+
+        transform = rendering.Transform()
+        transform.set_translation(x, y)
+        self.viewer.draw_circle(r, 30, color=c).add_attr(transform)
 
     def close(self):
         pass

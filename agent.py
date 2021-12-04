@@ -257,6 +257,7 @@ class DQNAgent():
         x_list = []
         y_list = []
         heading_list = []
+        save_new_state_list = []
         while(True):
             next_action = self.select_action(sess, new_state, self._epsilon, self._eval_model)
             env.step(next_action)
@@ -269,6 +270,7 @@ class DQNAgent():
             x_list.append(x)
             y_list.append(y)
             heading_list.append(heading)
+            save_new_state_list.append(str(new_state))
             #resize
 
             self._memory.append(old_state, action, reward, new_state, is_terminal)  # 插入数据
@@ -323,13 +325,14 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if total_reward > -25:
+                if total_reward > -500:
                     plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(goal[0], goal[1],marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
                     #plt.show()
                     plt.savefig('./saved_result/' + str(self.episode) + '.png')
+                    np.savetxt('./saved_result/' + str(self.episode) + '.txt', save_new_state_list, fmt="%s", delimiter=',')
 
                 step_for_newenv = 0
                 total_reward = 0
@@ -339,6 +342,7 @@ class DQNAgent():
                 heading_list = []
                 x_list = []
                 y_list = []
+                save_new_state_list = []
 
                 self.save_model(sess, saver, self.date_time)
 
