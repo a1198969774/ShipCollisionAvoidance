@@ -324,6 +324,7 @@ class DQNAgent():
                 # plt.plot(plot_action_list)
                 # plt.show()
                 if total_reward > -25:
+                    plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(goal[0], goal[1],marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
@@ -336,6 +337,8 @@ class DQNAgent():
                 plot_reward_list = []
                 plot_sub_reward_list = []
                 heading_list = []
+                x_list = []
+                y_list = []
 
                 self.save_model(sess, saver, self.date_time)
 
