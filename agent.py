@@ -1,5 +1,6 @@
 """Main DQN agent."""
 import datetime
+import os
 
 import numpy as np
 import tensorflow as tf
@@ -246,6 +247,9 @@ class DQNAgent():
         # 第二次训练
         save_path = saver.save(sess, "./saved_network/" + str(name) + "/model.ckpt")
     def fit1(self,sess, saver, env):
+        path = "./saved_result/" + self.date_time
+        if not os.path.exists(path):
+            os.makedirs(path)
         goal = env.reset()
         old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
         #initializition
@@ -331,8 +335,8 @@ class DQNAgent():
                     plt.plot(goal[0], goal[1],marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
                     #plt.show()
-                    plt.savefig('./saved_result/' + str(self.episode) + '.png')
-                    np.savetxt('./saved_result/' + str(self.episode) + '.txt', save_new_state_list, fmt="%s", delimiter=',')
+                    plt.savefig(path + '/' + str(self.episode) + '.png')
+                    np.savetxt(path + '/' + str(self.episode) + '.txt', save_new_state_list, fmt="%s", delimiter=',')
 
                 step_for_newenv = 0
                 total_reward = 0
