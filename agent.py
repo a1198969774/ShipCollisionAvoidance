@@ -268,6 +268,8 @@ class DQNAgent():
             old_state, action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
             total_reward += reward
 
+            print(sub_reward)
+
             plot_action_list.append(next_action)
             plot_reward_list.append(reward)
             plot_sub_reward_list.append(sub_reward)
