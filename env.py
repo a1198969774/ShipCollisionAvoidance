@@ -77,7 +77,7 @@ class envModel(gym.Env):
     def randgoal(self):
         goal = []
         x = 5000
-        y = 9500
+        y = 6000
         goal.append(x)
         goal.append(y)
         return goal

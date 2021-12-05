@@ -7,7 +7,7 @@ class Config:
     parser.add_argument('--seed', default=10703, type=int)
     parser.add_argument('--input_shape', default=(200, 200))
     parser.add_argument('--gamma', default=0.99)
-    parser.add_argument('--max_step', default=700)
+    parser.add_argument('--max_step', default=1200)
     parser.add_argument('--max_episode', default=5000)
     parser.add_argument('--epsilon', default=0.1)
     parser.add_argument('--learning_rate', default=0.00025)
