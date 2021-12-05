@@ -74,7 +74,7 @@ class DQNAgent():
 
         self.date_time = str(datetime.date.today())
         self.network_name = "./saved_network/" + str(self.date_time)
-        while (os.path.exist(self.network_name)):
+        while (os.path.exists(self.network_name)):
             self.network_name += "1"
 
 
@@ -275,7 +275,7 @@ class DQNAgent():
             old_state, action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
             total_reward += reward
 
-            print(sub_reward)
+            #print(sub_reward)
 
             plot_action_list.append(next_action)
             plot_reward_list.append(reward)
@@ -328,6 +328,7 @@ class DQNAgent():
             if step_for_newenv == self.args.max_step:
                 is_terminal = True
 
+            a = zip(x_list, y_list)
             if is_terminal:
                 # showPath
                 # self.save_model()
@@ -338,17 +339,17 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if step_for_newenv < self.args.max_step:
+                if step_for_newenv <= self.args.max_step:
                     plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(goal[0], goal[1],marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
                     #plt.show()
                     plt.savefig(path + '/' + str(self.episode) + '.png')
-                    np.savetxt(path + '/' + str(self.episode) + 'state.txt', save_new_state_list, fmt="%s", delimiter=',')
+                    #np.savetxt(path + '/' + str(self.episode) + 'state.txt', save_new_state_list, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'action.txt', plot_action_list, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'sub_reward.txt', plot_sub_reward_list, fmt="%s", delimiter=',')
-                    np.savetxt(path + '/' + str(self.episode) + 'path.txt', zip(x_list, y_list), fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'path.txt', list(zip(x_list, y_list)), fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'heading.txt', heading_list, fmt="%s",
                                delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'reward.txt', plot_reward_list, fmt="%s",
@@ -364,7 +365,7 @@ class DQNAgent():
                 y_list = []
                 save_new_state_list = []
 
-                self.save_model(sess, saver, self.date_time)
+                self.save_model(sess, saver, self.network_name)
 
                 env.reset()
                 old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
