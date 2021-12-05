@@ -49,6 +49,8 @@ def main():
     args = parser.parse_args()
     args.input_shape = tuple(args.input_shape)
     print('Environment : %s.' % (args.env,))
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+    config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
 
     ##env = gym.make(args.env)
     env = envModel()
@@ -103,7 +105,7 @@ def main():
                      RMSP_EPSILON)
 
 
-    with tf.Session() as sess:
+    with tf.Session(config=config) as sess:
         sess.run(tf.global_variables_initializer())
 
         sess.run(update_target_params_ops)
