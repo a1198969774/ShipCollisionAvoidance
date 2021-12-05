@@ -73,6 +73,9 @@ class DQNAgent():
         self.args.input_shape = tuple(self.args.input_shape)
 
         self.date_time = str(datetime.date.today())
+        self.network_name = "./saved_network/" + str(self.date_time)
+        while (os.path.exist(self.network_name)):
+            self.network_name += "1"
 
 
     def _get_error_and_train_op(self,reward_ph,
@@ -242,14 +245,18 @@ class DQNAgent():
             #         break
             # break
 
-    def save_model(self, sess, saver, name):
+    def save_model(self, sess, saver, network_name):
         # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time + "/model.ckpt")
         # 第二次训练
-        save_path = saver.save(sess, "./saved_network/" + str(name) + "/model.ckpt")
+        save_path = saver.save(sess, network_name+ "/model.ckpt")
     def fit1(self,sess, saver, env):
         path = "./saved_result/" + self.date_time
-        if not os.path.exists(path):
-            os.makedirs(path)
+        while(os.path.exists(path)):
+            path = path + "1"
+        os.makedirs(path)
+
+
+
         goal = env.reset()
         old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
         #initializition
@@ -336,7 +343,14 @@ class DQNAgent():
                     plt.plot(x_list[0], y_list[0], marker='v')
                     #plt.show()
                     plt.savefig(path + '/' + str(self.episode) + '.png')
-                    np.savetxt(path + '/' + str(self.episode) + '.txt', save_new_state_list, fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'state.txt', save_new_state_list, fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'action.txt', plot_action_list, fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'sub_reward.txt', plot_sub_reward_list, fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'path.txt', zip(x_list, y_list), fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'heading.txt', heading_list, fmt="%s",
+                               delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'reward.txt', plot_reward_list, fmt="%s",
+                               delimiter=',')
 
                 step_for_newenv = 0
                 total_reward = 0
