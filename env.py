@@ -195,6 +195,30 @@ class envModel(gym.Env):
                         total += 1
         print("total point num is：", total)
 
+    def input_initialization(self, env_info):
+        state = env_info[0]  # laser info + self state
+        state_set = []
+        for i in range(self.Num_skipFrame * self.Num_stackFrame):
+            state_set.append(state)
+        state_stack = np.zeros((self.Num_stackFrame, self.Num_dataSize))
+        for stack_frame in range(self.Num_stackFrame):
+            state_stack[(self.Num_stackFrame - 1) - stack_frame,
+            :] = state_set[-1 - (self.Num_skipFrame * stack_frame)]
+
+        observation = env_info[1]  # image info
+        observation_set = []
+        for i in range(self.Num_skipFrame * self.Num_stackFrame):
+            observation_set.append(observation)
+        # 使用观察组根据跳帧和堆叠帧的数量堆叠帧
+        observation_stack = np.zeros(
+            (self.img_size, self.img_size, self.Num_stackFrame))
+        # print("shape of observation stack={}".format(observation_stack.shape))
+        for stack_frame in range(self.Num_stackFrame):
+            observation_stack[:, :, stack_frame] = observation_set[-1 -
+                                                                   (self.Num_skipFrame * stack_frame)]
+        observation_stack = np.uint8(observation_stack)
+
+        return observation_stack, observation_set, state_stack, state_set
 
     def test_state1(self, state):
         total = 0
@@ -226,8 +250,8 @@ class envModel(gym.Env):
         #array = np.zeros((1000, 1000, 3))
         #old_state = np.random.rand(1, 80, 80, 4)
 
-        # input1-->相机
-        # shape of image_matrix [768,1024,3]
+
+        # shape of image_matrix [1000,1000,3]
         #self.test_state(array)
         image_matrix = np.uint8(array)
         # image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
