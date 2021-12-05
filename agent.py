@@ -339,7 +339,7 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if step_for_newenv <= self.args.max_step:
+                if step_for_newenv < self.args.max_step:
                     plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(goal[0], goal[1],marker='v')
