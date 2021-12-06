@@ -139,14 +139,14 @@ class envModel(gym.Env):
         reward += r1
         reward_list.append(r1)
         # r2 目标船相对本船的方位
-        rel_angle = abs(math.atan2((self.goal[0] - self.selfship.state[0]),(self.goal[0] - self.selfship.state[0]))) / math.pi * 180
-        r2 = -rel_angle * 0.1
+        rel_angle = abs(math.atan2((self.goal[0] - self.selfship.state[0]),(self.goal[1] - self.selfship.state[1]))) / math.pi * 180
+        r2 = -rel_angle * 100
         reward += r2
         reward_list.append(r2)
         # r3 角速度变化即角度变化
         r3 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3])
-        reward_list.append(r2)
-        reward = reward + r2
+        reward_list.append(r3)
+        reward = reward + r3
         #r4右转向
         r4 = 0.01
         if self.action == 0:
