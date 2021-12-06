@@ -77,18 +77,26 @@ class envModel(gym.Env):
     def randgoal(self):
         goal = []
         x = 5000
-        y = 6000
+        y = 8000
         goal.append(x)
         goal.append(y)
         return goal
 
     def turn(self,action):
         return 3 * (action - 1)
+
     def headingToAngle(self,angle):
         result = 90 - angle
         if result < -180:
             result += 360
         return result / 180 * math.pi
+
+    def angleToHeading(self,angle):
+        result = 90 - angle
+        if result < 0:
+            result += 360
+        return result
+
     def step(self, action):
         reward = 0.0  # 奖励初始值为0
         done = False  # 该局游戏是否结束
@@ -127,34 +135,37 @@ class envModel(gym.Env):
         reward_list = []
         reward_list.append(self.d)
         # r1假如上一时刻到目标的距离<这一时刻到目标的距离就会有负的奖励
-        if self.d_last < self.d:
-            reward = reward - 0.005 * (self.d - self.d_last)
-            reward_list.append(reward)
-        if self.d_last >= self.d:
-            reward = reward + 0.005 * (self.d_last - self.d)
-            reward_list.append(reward)
-        #r2 角速度变化即角度变化
-        r2 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3])
+        r1 = -0.005 * (self.d - self.d_last)
+        reward += r1
+        reward_list.append(r1)
+        # r2 目标船相对本船的方位
+        rel_angle = abs(math.atan2((self.goal[0] - self.selfship.state[0]),(self.goal[0] - self.selfship.state[0]))) / math.pi * 180
+        r2 = -rel_angle * 0.1
+        reward += r2
+        reward_list.append(r2)
+        # r3 角速度变化即角度变化
+        r3 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3])
         reward_list.append(r2)
         reward = reward + r2
-        #r3右转向
-        r3 = 0.01
+        #r4右转向
+        r4 = 0.01
         if self.action == 0:
             reward_list.append(0)
         elif self.selfship.last_state[4] > 0 and self.selfship.state[4] < 0:
-            # reward += -r3
+            reward += -r4
             reward_list.append(0)
         elif self.selfship.last_state[4] < 0 and self.selfship.state[4] > 0:
-            reward += r3
-            reward_list.append(r3)
+            # reward += r4
+            # reward_list.append(r3)
+            pass
         else:
             if self.selfship.state[4] > self.selfship.last_state[4]:
-                # reward -= r3
+                reward -= r4
                 reward_list.append(0)
             else:
-                reward += r3
-                reward_list.append(r3)
-
+                # reward += r4
+                # reward_list.append(r3)
+                pass
         # 到达目标点有正的奖励
         if self.d < self.d_min:
             reward_list.append(20)
