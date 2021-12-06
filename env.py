@@ -68,7 +68,7 @@ class envModel(gym.Env):
     def getRelAngle(self):
         angle = abs(math.atan2((self.goal[1] - self.selfship.state[1]),
                        (self.goal[0] - self.selfship.state[0]))) / math.pi * 180
-        heading = self.angleToHeading(self.self.selfship.state[4])
+        heading = self.angleToHeading(self.selfship.state[4])
         result = angle - heading#目标船在本船右方为正
         return result
     #@staticmethod
