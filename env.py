@@ -57,11 +57,20 @@ class envModel(gym.Env):
 
         self.d = math.sqrt((self.selfship.state[0] - self.goal[0]) ** 2 + (self.selfship.state[1] - self.goal[1]) ** 2)
         self.d_last = self.d
+
+        self.rel_angle = self.getRelAngle()
+        self.rel_angle_last = self.rel_angle
         self.is_terminal = False
         self.new_state = None
         # 返回
         return self.goal
 
+    def getRelAngle(self):
+        angle = abs(math.atan2((self.goal[1] - self.selfship.state[1]),
+                       (self.goal[0] - self.selfship.state[0]))) / math.pi * 180
+        heading = self.angleToHeading(self.self.selfship.state[4])
+        result = angle - heading#目标船在本船右方为正
+        return result
     #@staticmethod
     def randship(self,_t: np.int,type):
         # _t 为船类型（agent或其它）
@@ -128,6 +137,8 @@ class envModel(gym.Env):
         self.state = np.vstack([ship.state for (_, ship) in enumerate(self.ships)])
         self.d_last = self.d
         self.d = math.sqrt((self.selfship.state[0] - self.goal[0]) ** 2 + (self.selfship.state[1] - self.goal[1]) ** 2)
+        self.rel_angle_last = self.rel_angle
+        self.rel_angle = self.getRelAngle()
 
 
     def getreward(self):
@@ -139,10 +150,32 @@ class envModel(gym.Env):
         reward += r1
         reward_list.append(r1)
         # r2 目标船相对本船的方位
-        rel_angle = abs(math.atan2((self.goal[0] - self.selfship.state[0]),(self.goal[1] - self.selfship.state[1]))) / math.pi * 180
-        r2 = -rel_angle * 100
+        r2_value = 0.2
+        r2_symble = 0
+        if abs(self.rel_angle) < 0.1:
+            r2_symble = 1
+        elif abs(self.rel_angle_last) < 0.1:
+            r2_symble = -1
+        elif self.rel_angle > 0 and self.rel_angle_last > 0:
+            if self.rel_angle - self.rel_angle_last > 0 :
+                r2_symble = -1
+            else:
+                r2_symble = 1
+        elif self.rel_angle > 0 and self.rel_angle_last < 0:
+            r2_symble = -1
+        elif self.rel_angle < 0 and self.rel_angle_last > 0:
+            r2_symble = -1
+        elif self.rel_angle < 0 and self.rel_angle_last < 0:
+            if self.rel_angle - self.rel_angle_last > 0 :
+                r2_symble = 1
+            else:
+                r2_symble = -1
+        else:
+            print("未知错误")
+        r2 = r2_value * r2_symble
         reward += r2
         reward_list.append(r2)
+
         # r3 角速度变化即角度变化
         r3 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3])
         reward_list.append(r3)
@@ -156,7 +189,7 @@ class envModel(gym.Env):
             reward_list.append(0)
         elif self.selfship.last_state[4] < 0 and self.selfship.state[4] > 0:
             # reward += r4
-            # reward_list.append(r3)
+            # reward_list.append(r4)
             pass
         else:
             if self.selfship.state[4] > self.selfship.last_state[4]:
@@ -164,7 +197,7 @@ class envModel(gym.Env):
                 reward_list.append(0)
             else:
                 # reward += r4
-                # reward_list.append(r3)
+                # reward_list.append(r4)
                 pass
         # 到达目标点有正的奖励
         if self.d < self.d_min:
