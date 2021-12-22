@@ -270,14 +270,14 @@ class DQNAgent():
                          }
 
             if self._is_double_dqn:
-                rnn_out = sess.run(self._eval_model['rnn_out'], feed_dict={
-                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
-                out1 = sess.run(self._eval_model['out1'], feed_dict={
-                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
-                out2 = sess.run(self._eval_model['out2'], feed_dict={
-                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
-                q_network = sess.run(self._eval_model['q_values'], feed_dict={
-                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                # rnn_out = sess.run(self._eval_model['rnn_out'], feed_dict={
+                #     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                # out1 = sess.run(self._eval_model['out1'], feed_dict={
+                #     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                # out2 = sess.run(self._eval_model['out2'], feed_dict={
+                #     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                # q_network = sess.run(self._eval_model['q_values'], feed_dict={
+                #     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
                 action_chosen_by_online = sess.run(self._eval_model['action'], feed_dict={
                     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
                 feed_dict[self._action_chosen_by_eval_ph] = list(enumerate(action_chosen_by_online))
