@@ -171,7 +171,7 @@ class DQNAgent():
         else:
             state = state.astype(np.float32) / 255.0
             feed_dict = {model['input_frames'] :state}
-            action = sess.run(model['action'],feed_dict=feed_dict)
+            action = sess.run(model['action'],feed_dict=feed_dict)[0]
         return action
 
     def get_multi_step_sample(self,env,sess,num_step,epsilon):
@@ -321,7 +321,12 @@ class DQNAgent():
                     #np.savetxt(path + '/' + str(self.episode) + 'state.txt', save_new_state_list, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'action.txt', plot_action_list, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'sub_reward.txt', plot_sub_reward_list, fmt="%s", delimiter=',')
-                    np.savetxt(path + '/' + str(self.episode) + 'path.txt', list(zip(x_list, y_list)), fmt="%s", delimiter=',')
+                    xy_path = list(zip(x_list, y_list))
+                    a1 = np.asarray(xy_path)
+                    try:
+                        np.savetxt(path + '/' + str(self.episode) + 'path.txt', xy_path, fmt="%s", delimiter=',')
+                    except Exception:
+                        pass
                     np.savetxt(path + '/' + str(self.episode) + 'heading.txt', heading_list, fmt="%s",
                                delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'reward.txt', plot_reward_list, fmt="%s",
