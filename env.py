@@ -24,8 +24,8 @@ class envModel(gym.Env):
     def __init__(self):
         self.viewer = None ##??
         self.action_space_n = 3
-        self.action_space = spaces.Discrete(360)  ##??
-        self.observation_space = spaces.Box(low=0, high=VIEWPORT_H, shape=(MAX_SHIP_NUM, 4), dtype=np.float32)  #??
+        #self.action_space = spaces.Discrete(360)  ##??
+        #self.observation_space = spaces.Box(low=0, high=VIEWPORT_H, shape=(MAX_SHIP_NUM, 4), dtype=np.float32)  #??
 
         self.scale = 0.1
         parser = Config.parser
@@ -86,7 +86,7 @@ class envModel(gym.Env):
     def randgoal(self):
         goal = []
         x = 5000
-        y = 8000
+        y = 6500
         goal.append(x)
         goal.append(y)
         return goal
@@ -146,7 +146,7 @@ class envModel(gym.Env):
         reward_list = []
         reward_list.append(self.d)
         # r1假如上一时刻到目标的距离<这一时刻到目标的距离就会有负的奖励
-        r1 = -0.005 * (self.d - self.d_last)
+        r1 = -0.005 * (self.d - self.d_last) * 2
         reward += r1
         reward_list.append(r1)
         # r2 目标船相对本船的方位
@@ -286,32 +286,38 @@ class envModel(gym.Env):
                         total += 1
         print("total point num is：", total)
     def get_state(self):
+        if self.args.is_cnn == 1:
+            if self.viewer != None:
+                array = self.render(mode='rgb_array')
+            else:
+                array = np.zeros((1000,1000,3))
+            #array = np.zeros((1000, 1000, 3))
+            #old_state = np.random.rand(1, 80, 80, 4)
 
-        if self.viewer != None:
-            array = self.render(mode='rgb_array')
+
+            # shape of image_matrix [1000,1000,3]
+            #self.test_state(array)
+            image_matrix = np.uint8(array)
+            # image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
+            # # shape of image_matrix [80,80,3]
+            # result_image = image_matrix[:]
+            # self.test_state(result_image)
+            image_matrix = cv2.cvtColor(image_matrix, cv2.COLOR_RGB2GRAY)
+            image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
+            #self.test_state1(image_matrix1)
+            # shape of image_matrix [80,80]
+            # image_matrix = np.reshape(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
+
+            # print("shape of image matrix={}".format(self.image_matrix.shape))
+
+            self.old_state = self.new_state[:] if self.new_state is not None else None
+            self.new_state = image_matrix.reshape((1, self.args.input_shape[0], self.args.input_shape[1], 1))
         else:
-            array = np.zeros((1000,1000,3))
-        #array = np.zeros((1000, 1000, 3))
-        #old_state = np.random.rand(1, 80, 80, 4)
-
-
-        # shape of image_matrix [1000,1000,3]
-        #self.test_state(array)
-        image_matrix = np.uint8(array)
-        # image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
-        # # shape of image_matrix [80,80,3]
-        # result_image = image_matrix[:]
-        # self.test_state(result_image)
-        image_matrix = cv2.cvtColor(image_matrix, cv2.COLOR_RGB2GRAY)
-        image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
-        #self.test_state1(image_matrix1)
-        # shape of image_matrix [80,80]
-        # image_matrix = np.reshape(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
-
-        # print("shape of image matrix={}".format(self.image_matrix.shape))
-
-        self.old_state = self.new_state[:] if self.new_state is not None else None
-        self.new_state = image_matrix.reshape((1, self.args.input_shape[0], self.args.input_shape[1], 1))
+            state = []
+            state.append(self.rel_angle)
+            state.append(self.rel_angle_last)
+            self.old_state = self.new_state[:] if self.new_state is not None else None
+            self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
         #self.test_state2(self.new_state)
         reward, sub_reward, is_terminal= self.getreward()
         # new_state = np.random.rand(1, 80, 80, 4)
@@ -370,9 +376,9 @@ class Ship():
         # self.w = way * 2 * math.pi / 360.0  # 角度转弧度
         self.type = t
 
-        self.id = None  # 生成船唯一id
-        self.lastupdate = time.time()  # 上一次的计算时间
-        self.timescale = 100  # 时间缩放，或者速度的缩放
+        # self.id = None  # 生成船唯一id
+        # self.lastupdate = time.time()  # 上一次的计算时间
+        # self.timescale = 100  # 时间缩放，或者速度的缩放
 
         self.state = [x, y, speed, 0.0, heading, 0.0, 0.0]  # x,y,v,w,yaw,vx,vy
         self.last_state = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

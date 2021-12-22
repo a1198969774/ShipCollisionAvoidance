@@ -10,3 +10,5 @@ __pycache__
 saved_result
 saved_network
 test_img_overlay.py
+/test_lstm_1.py
+/test_lstm_2.py

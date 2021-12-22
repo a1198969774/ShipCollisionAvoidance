@@ -24,7 +24,7 @@ class DQNAgent():
                  gamma,
                  update_freq,
                  target_update_freq,
-                 update_target_params_ops,
+                 # update_target_params_ops,
                  batch_size,
                  is_double_dqn,
                  is_per,
@@ -40,33 +40,33 @@ class DQNAgent():
         self._target_model = target_model
         self._memory = memory
         self._num_actions = num_actions
-        self._gamma = gamma
+        self._gamma = gamma   ##？？
         self._update_freq = update_freq
         self._target_update_freq = target_update_freq
-        self._update_target_params_ops = update_target_params_ops
+        # self._update_target_params_ops = update_target_params_ops
         self._batch_size = batch_size
         self._is_double_dqn = is_double_dqn
         self._is_per = is_per
         self._is_distributional = is_distributional
         self._num_step = num_step
         self._is_noisy = is_noisy
-        self._learning_rate = learning_rate
-        self._rmsp_decay = rmsp_decay
-        self._rmsp_momentum = rmsp_momentum
-        self._rmsp_epsilon = rmsp_epsilon
+        self._learning_rate = learning_rate  ##？？
+        self._rmsp_decay = rmsp_decay  ##？？
+        self._rmsp_momentum = rmsp_momentum  ##？？
+        self._rmsp_epsilon = rmsp_epsilon  ##？？
         self._update_times = 0
         self._beta = EPSILON_BEGIN
         self._beta_increment = (EPSILON_END-BETA_BEGIN)/2000000.0
         self._epsilon = EPSILON_BEGIN if is_noisy else 1
         self._epsilon_increment =  (EPSILON_END - EPSILON_BEGIN)/10000.0 if is_noisy == 0 else 0.
-        self._action_ph = tf.placeholder(tf.int32,[None,2],'action_ph')
-        self._reward_ph = tf.placeholder(tf.float32,name='reward_ph')
-        self._is_terminal_ph = tf.placeholder(tf.float32,name='is_terminal_ph')
-        self._action_chosen_by_eval_ph = tf.placeholder(tf.int32,[None,2],'action_chosen_by_eval_ph')
-        self._loss_weight_ph = tf.placeholder(tf.float32,name='loss_weight_ph')
+        self._action_ph = tf.placeholder(tf.int32,[None,2],'action_ph')     ##？？
+        self._reward_ph = tf.placeholder(tf.float32,name='reward_ph')  ##？？
+        self._is_terminal_ph = tf.placeholder(tf.float32,name='is_terminal_ph')  ##？？
+        self._action_chosen_by_eval_ph = tf.placeholder(tf.int32,[None,2],'action_chosen_by_eval_ph')  ##？？
+        self._loss_weight_ph = tf.placeholder(tf.float32,name='loss_weight_ph')  ##？？
         self._error_op,self._train_op = self._get_error_and_train_op(self._reward_ph,self._is_terminal_ph,
                                                                      self._action_ph,self._action_chosen_by_eval_ph,
-                                                                     self._loss_weight_ph)
+                                                                     self._loss_weight_ph)  ##？？
         self.episode = 0
         parser = Config.parser
         self.args = parser.parse_args()
@@ -192,58 +192,25 @@ class DQNAgent():
 
         return old_state,action,total_reward,new_state,np.sign(total_is_terminal)
 
-    def fit(self,sess,env,num_iterations,do_train=True):
+    def assign_network_to_target(self, sess):
+        # Get trainable variables
+        trainable_variables = tf.trainable_variables()
+        # network lstm variables
+        trainable_variables_network = [
+            var for var in trainable_variables if var.name.startswith('network')]
 
-        ##num_environment = env.num_process
-        env.reset()
+        # target lstm variables
+        trainable_variables_target = [
+            var for var in trainable_variables if var.name.startswith('target')]
+        count = 0
+        for i in range(len(trainable_variables_network)):
+            sess.run(
+                tf.assign(
+                    trainable_variables_target[i],
+                    trainable_variables_network[i]))
+            count += 1
 
-        for t in range(0,num_iterations):
-            #准备数据
-            old_state,action,reward,new_state,is_terminal = self.get_multi_step_sample(env,sess,self._num_step,self._epsilon)
-            self._memory.append(old_state,action,reward,new_state,is_terminal) # 插入数据
-            #??
-            if self._epsilon > EPSILON_END:
-                self._epsilon += self._epsilon_increment
-            if do_train:
-                num_update = sum([1 if i % self._update_freq == 0 else 0 for i in range(t)])
-                # 抽取数据
-                for _ in range(num_update):
-                    print(str(num_update))
-                    if self._is_per == 1:
-                        (old_state_list, action_list, reward_list, new_state_list, is_terminal_list), \
-                        idx_list, p_list, sum_p, count = self._memory.sample(self._batch_size)
-                    else:
-                        old_state_list, action_list, reward_list, new_state_list, is_terminal_list \
-                            = self._memory.sample(self._batch_size)
-
-                    feed_dict = {self._target_model['input_frames']: new_state_list.astype(np.float32) / 255.0,
-                                 self._eval_model['input_frames']: old_state_list.astype(np.float32) / 255.0,
-                                 self._action_ph: list(enumerate(action_list)),
-                                 self._reward_ph: np.array(reward_list).astype(np.float32),
-                                 self._is_terminal_ph: np.array(is_terminal_list).astype(np.float32),
-                                 }
-
-                    if self._is_double_dqn:
-                        action_chosen_by_online = sess.run(self._eval_model['action'], feed_dict={
-                                    self._eval_model['input_frames']: new_state_list.astype(np.float32)/255.0})
-                        feed_dict[self._action_chosen_by_eval_ph] = list(enumerate(action_chosen_by_online))
-
-                    if self._is_per == 1:
-                        # Annealing weight beta
-                        feed_dict[self._loss_weight_ph] = (np.array(p_list)*count/sum_p)**(-self._beta)
-                        error, _ = sess.run([self._error_op, self._train_op], feed_dict=feed_dict)
-                        self._memory.update(idx_list, error)
-                    else:
-                        sess.run(self._train_op, feed_dict=feed_dict)
-
-                    self._update_times += 1
-                    if self._beta < BETA_END:
-                        self._beta += self._beta_increment
-
-                    if self._update_times%self._target_update_freq == 0:
-                        sess.run(self._update_target_params_ops)
-            #         break
-            # break
+        print(count)
 
     def save_model(self, sess, saver, network_name):
         # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time + "/model.ckpt")
@@ -254,12 +221,10 @@ class DQNAgent():
         while(os.path.exists(path)):
             path = path + "1"
         os.makedirs(path)
-
-
-
         goal = env.reset()
         old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
         #initializition
+
         step_for_newenv = 0
         total_reward = 0
         plot_action_list = []
@@ -295,7 +260,7 @@ class DQNAgent():
                 idx_list, p_list, sum_p, count = self._memory.sample(self._batch_size)
             else:
                 old_state_list, action_list, reward_list, new_state_list, is_terminal_list \
-                    = self._memory.sample(self._batch_size)
+                    = self._memory.sample(self._batch_size, self.args.is_cnn)
 
             feed_dict = {self._target_model['input_frames']: new_state_list.astype(np.float32) / 255.0,
                          self._eval_model['input_frames']: old_state_list.astype(np.float32) / 255.0,
@@ -305,6 +270,14 @@ class DQNAgent():
                          }
 
             if self._is_double_dqn:
+                rnn_out = sess.run(self._eval_model['rnn_out'], feed_dict={
+                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                out1 = sess.run(self._eval_model['out1'], feed_dict={
+                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                out2 = sess.run(self._eval_model['out2'], feed_dict={
+                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                q_network = sess.run(self._eval_model['q_values'], feed_dict={
+                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
                 action_chosen_by_online = sess.run(self._eval_model['action'], feed_dict={
                     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
                 feed_dict[self._action_chosen_by_eval_ph] = list(enumerate(action_chosen_by_online))
@@ -322,13 +295,12 @@ class DQNAgent():
                 self._beta += self._beta_increment
 
             if self._update_times % self._target_update_freq == 0:
-                sess.run(self._update_target_params_ops)
-
+                # sess.run(self._update_target_params_ops)
+                self.assign_network_to_target(sess)
             step_for_newenv = step_for_newenv + 1
             if step_for_newenv == self.args.max_step:
                 is_terminal = True
 
-            a = zip(x_list, y_list)
             if is_terminal:
                 # showPath
                 # self.save_model()

@@ -22,12 +22,19 @@ def create_conv_network(input_frames,trainable):
     flat_output2_size = 16928
     flat_output2 = tf.reshape(output2, [-1, flat_output2_size], name='flat_output2')
 
-    return flat_output2, flat_output2_size, [conv1_W, conv1_b, conv2_W, conv2_b]
+    return flat_output2, flat_output2_size, [conv1_W, conv1_b, conv2_W, conv2_b], 1
 
+def create_lstm_network(input_frames,trainable):
+    Num_cellState = 256
+    x_unstack = tf.unstack(input_frames, axis=2) #按axis切分成 axis個數組
+    cell = tf.contrib.rnn.BasicLSTMCell(num_units=Num_cellState)
+    rnn_out, rnn_state = tf.nn.static_rnn(
+        inputs=x_unstack, cell=cell, dtype=tf.float32)
+    flat_output2 = tf.reshape(rnn_out, [-1, len(rnn_out) * Num_cellState], name='flat_output2')
+    return flat_output2, len(rnn_out) * Num_cellState, [cell], rnn_out
 
-
-def create_deep_q_network(input_frames,num_actions,trainable,noisy):
-    flat_output,flat_output_size,parameter_list = create_conv_network(input_frames,trainable)
+def create_deep_q_network(input_frames,num_actions,create_network_cnn_or_lstm,trainable,noisy):
+    flat_output,flat_output_size,parameter_list, rnn_out = create_network_cnn_or_lstm(input_frames,trainable)
 
     if noisy == False:
         fc1_W = tf.get_variable(shape=[flat_output_size,256],name='fc1_W',
@@ -55,11 +62,11 @@ def create_deep_q_network(input_frames,num_actions,trainable,noisy):
         q_network, parameter_list_q_network = noisy_dense(output3, name='noisy_fc2',
                                                           input_size=256, output_size=num_actions, trainable=trainable)
         parameter_list += parameter_list_output3 + parameter_list_q_network
-    return q_network, parameter_list
+    return q_network, parameter_list, flat_output,  output3, rnn_out
 
 
-def create_duel_q_network(input_frames,num_actions,trainable,noisy):
-    flat_output, flat_output_size, parameter_list = create_conv_network(input_frames, trainable)
+def create_duel_q_network(input_frames,num_actions,create_network_cnn_or_lstm,trainable,noisy):
+    flat_output, flat_output_size, parameter_list = create_network_cnn_or_lstm(input_frames, trainable)
 
     if noisy == False:
         fcV_W = tf.get_variable(shape=[flat_output_size, 512], name='fcV_W',
@@ -107,26 +114,33 @@ def create_duel_q_network(input_frames,num_actions,trainable,noisy):
     return q_network, parameter_list
 
 
-def create_model(window,input_shape,num_actions,model_name,create_network_fn,trainable,noisy):
+def create_model(window, is_cnn, input_shape, input_length, num_actions,model_name,create_network_fn,create_network_cnn_or_lstm,trainable,noisy):
     """创建Q网络"""
     with tf.variable_scope(model_name):
-        input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
-        q_network,parameter_list = create_network_fn(input_frames,num_actions,trainable,noisy)
-
+        if is_cnn == 1:
+            input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
+        else:
+            input_frames = tf.placeholder(tf.float32, [None, input_length, window],
+                                          name='input_frames')
+        q_network,parameter_list, out1, out2, rnn_out = create_network_fn(input_frames,num_actions,create_network_cnn_or_lstm,trainable,noisy)
+        # tf.reduce_max按行求最值
         mean_max_q = tf.reduce_mean(tf.reduce_max(q_network,axis=[1]),name='mean_max_q')
-        action = tf.argmax(q_network,axis=1)
+        action = tf.argmax(q_network,axis=1)  #返回最大值的索引
 
         model = {
             'q_values':q_network,
             'input_frames':input_frames,
             'mean_max_q':mean_max_q,
             'action':action,
+            'out1': out1,
+            'out2': out2,
+            'rnn_out': rnn_out,
         }
 
     return model,parameter_list
 
 
-def create_distributional_model(window,input_shape,num_actions,model_name,create_network_fn,trainable,noisy):
+def create_distributional_model(window, is_cnn, input_shape, input_length, num_actions,model_name,create_network_fn,create_network_cnn_or_lstm,trainable,noisy):
     N_atoms = 51
     V_Max = 20.0
     V_Min = 0.0
@@ -135,8 +149,12 @@ def create_distributional_model(window,input_shape,num_actions,model_name,create
     z_list_broadcasted = tf.tile(tf.reshape(z_list,[1,N_atoms]),[num_actions,1]) # batch * num_actions * N_atoms
 
     with tf.variable_scope(model_name):
-        input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
-        q_distributional_network,parameter_list = create_network_fn(input_frames,num_actions * N_atoms,trainable,noisy)
+        if is_cnn == 1:
+            input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
+        else:
+            input_frames = tf.placeholder(tf.float32, [None, input_length, window],
+                                          name='input_frames')
+        q_distributional_network,parameter_list = create_network_fn(input_frames,num_actions * N_atoms,create_network_cnn_or_lstm,trainable,noisy)
 
         q_distributional_network = tf.reshape(q_distributional_network,[-1,num_actions,N_atoms])
 

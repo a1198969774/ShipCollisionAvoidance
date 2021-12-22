@@ -8,7 +8,7 @@ import PIL
 
 from env import envModel
 from replayMemory import ReplayMemory, PriorityExperienceReplay
-from model import create_deep_q_network, create_duel_q_network, create_model, create_distributional_model
+from model import create_deep_q_network, create_duel_q_network, create_model, create_distributional_model,create_conv_network,create_lstm_network
 from agent import DQNAgent
 from config import Config
 
@@ -68,22 +68,23 @@ def main():
 
     # 是否使用优先经验回放
     if args.is_per == 1:
-        replay_memory = PriorityExperienceReplay(REPLAYMEMORY_SIZE,args.window_size,args.input_shape)
+        replay_memory = PriorityExperienceReplay(REPLAYMEMORY_SIZE,args.window_size,args.input_shape, args.lstm_input_length)
     else:
-        replay_memory = ReplayMemory(REPLAYMEMORY_SIZE,args.window_size,args.input_shape)
+        replay_memory = ReplayMemory(REPLAYMEMORY_SIZE,args.window_size,args.input_shape, args.lstm_input_length)
 
     create_network_fn = create_deep_q_network if args.is_duel == 0 else create_duel_q_network
 
     create_model_fn = create_model if args.is_distributional == 0 else create_distributional_model
 
+    create_network_cnn_or_lstm = create_conv_network if args.is_cnn == 1 else create_lstm_network
     noisy = True if args.is_noisy == 1 else False
 
-    eval_model,eval_params = create_model_fn(args.window_size,args.input_shape,num_actions,
-                                             'eval_model',create_network_fn,trainable=True,noisy=noisy)
-    target_model,target_params = create_model_fn(args.window_size,args.input_shape,num_actions,
-                                                 'target_model',create_network_fn,trainable=False,noisy=noisy)
+    eval_model,eval_params = create_model_fn(args.window_size, args.is_cnn, args.input_shape, args.lstm_input_length, num_actions,
+                                             'eval_model',create_network_fn, create_network_cnn_or_lstm,trainable=True,noisy=noisy)
+    target_model,target_params = create_model_fn(args.window_size, args.is_cnn, args.input_shape, args.lstm_input_length, num_actions,
+                                                 'target_model',create_network_fn,create_network_cnn_or_lstm,trainable=False,noisy=noisy)
 
-    update_target_params_ops = [t.assign(s) for s,t in zip(eval_params,target_params)]
+    # update_target_params_ops = [t.assign(s) for s,t in zip(eval_params,target_params)]
 
     agent = DQNAgent(eval_model,
                      target_model,
@@ -92,7 +93,7 @@ def main():
                      args.gamma,
                      UPDATE_FREQUENCY,
                      TARGET_UPDATE_FREQENCY,
-                     update_target_params_ops,
+                     # update_target_params_ops,
                      args.batch_size,
                      args.is_double,
                      args.is_per,
@@ -108,8 +109,8 @@ def main():
     with tf.Session(config=config) as sess:
         sess.run(tf.global_variables_initializer())
 
-        sess.run(update_target_params_ops)
-
+        # sess.run(update_target_params_ops)
+        agent.assign_network_to_target(sess)
         print('prepare fixed samples for mean max q')
         ##get state and action
         #fixed_samples = get_fixed_samples(env, num_actions, NUM_FIXED_SAMPLES)
