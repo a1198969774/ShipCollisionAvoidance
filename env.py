@@ -92,7 +92,17 @@ class envModel(gym.Env):
         return goal
 
     def turn(self,action):
-        return 3 * (action - 1)
+        # return 3 * (action - 1)
+        T = 50
+        K = 0.05
+        Te = 2.5
+        rudder_order = action
+        self.selfship.last_roll_state = self.selfship.roll_state[:]
+        self.selfship.roll_state[0] = self.selfship.last_roll_state[0] + self.selfship.last_roll_state[1]  #角度
+        self.selfship.roll_state[1] = self.selfship.last_roll_state[1] - self.selfship.last_roll_state[1] / T + K / T * self.selfship.last_roll_state[2]
+        # self.roll_state[2] = self.last_roll_state[2] - self.last_roll_state[2] / Te + rudder_order /Te
+        self.selfship.roll_state[2] = rudder_order
+        return self.selfship.last_roll_state[1]
 
     def headingToAngle(self,angle):
         result = 90 - angle
@@ -382,7 +392,8 @@ class Ship():
 
         self.state = [x, y, speed, 0.0, heading, 0.0, 0.0]  # x,y,v,w,yaw,vx,vy
         self.last_state = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.roll_state = [0.0, 0.0, 0.0]
+        self.roll_state = [0.0, 0.0, 0.0] #舵令、角速度
+        self.last_roll_state = [0.0, 0.0, 0.0]
         self.encounter_type = type
 
 

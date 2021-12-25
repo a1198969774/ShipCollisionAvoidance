@@ -317,6 +317,8 @@ class DQNAgent():
                     plt.plot(goal[0], goal[1],marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
                     #plt.show()
+                    plt.xlim(1500,8500)
+                    plt.ylim(0,7000)
                     plt.savefig(path + '/' + str(self.episode) + '.png')
                     #np.savetxt(path + '/' + str(self.episode) + 'state.txt', save_new_state_list, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'action.txt', plot_action_list, fmt="%s", delimiter=',')
