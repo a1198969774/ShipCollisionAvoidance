@@ -64,7 +64,7 @@ class DQNAgent():
         self._is_terminal_ph = tf.placeholder(tf.float32,name='is_terminal_ph')  ##？？
         self._action_chosen_by_eval_ph = tf.placeholder(tf.int32,[None,2],'action_chosen_by_eval_ph')  ##？？
         self._loss_weight_ph = tf.placeholder(tf.float32,name='loss_weight_ph')  ##？？
-        self._error_op,self._train_op = self._get_error_and_train_op(self._reward_ph,self._is_terminal_ph,
+        self._error_op,self._train_op, self._loss_op = self._get_error_and_train_op(self._reward_ph,self._is_terminal_ph,
                                                                      self._action_ph,self._action_chosen_by_eval_ph,
                                                                      self._loss_weight_ph)  ##？？
         self.episode = 0
@@ -163,7 +163,7 @@ class DQNAgent():
                                                  decay=self._rmsp_decay, momentum=self._rmsp_momentum,
                                                  epsilon=self._rmsp_epsilon).minimize(loss)
             error_op = tf.abs(error, name='abs_error')
-            return error_op, train_op
+            return error_op, train_op, loss
 
     def select_action(self,sess,state,epsilon,model):
         if np.random.rand() < epsilon:
@@ -234,9 +234,12 @@ class DQNAgent():
         y_list = []
         heading_list = []
         save_new_state_list = []
+        plot_roll_state = []
+        plot_loss = []
         while(True):
             next_action = self.select_action(sess, new_state, self._epsilon, self._eval_model)
-            env.step(next_action)
+            roll_state = env.step(next_action)
+            plot_roll_state.append(roll_state)
             old_state, action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
             total_reward += reward
 
@@ -285,11 +288,11 @@ class DQNAgent():
             if self._is_per == 1:
                 # Annealing weight beta
                 feed_dict[self._loss_weight_ph] = (np.array(p_list) * count / sum_p) ** (-self._beta)
-                error, _ = sess.run([self._error_op, self._train_op], feed_dict=feed_dict)
+                error, _, loss = sess.run([self._error_op, self._train_op, self._loss_op], feed_dict=feed_dict)
                 self._memory.update(idx_list, error)
             else:
-                sess.run(self._train_op, feed_dict=feed_dict)
-
+                _, loss = sess.run(self._train_op, self._loss_op, feed_dict=feed_dict)
+            plot_loss.append(loss)
             self._update_times += 1
             if self._beta < BETA_END:
                 self._beta += self._beta_increment
@@ -322,6 +325,8 @@ class DQNAgent():
                     plt.savefig(path + '/' + str(self.episode) + '.png')
                     #np.savetxt(path + '/' + str(self.episode) + 'state.txt', save_new_state_list, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'action.txt', plot_action_list, fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'roll.txt', plot_roll_state, fmt="%s", delimiter=',')
+                    np.savetxt(path + '/' + str(self.episode) + 'loss.txt', plot_loss, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'sub_reward.txt', plot_sub_reward_list, fmt="%s", delimiter=',')
                     xy_path = list(zip(x_list, y_list))
                     a1 = np.asarray(xy_path)
