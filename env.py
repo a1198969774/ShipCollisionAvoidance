@@ -23,7 +23,7 @@ class envModel(gym.Env):
 
     def __init__(self):
         self.viewer = None ##??
-        self.action_space_n = 3
+        self.action_space_n = 15
         #self.action_space = spaces.Discrete(360)  ##??
         #self.observation_space = spaces.Box(low=0, high=VIEWPORT_H, shape=(MAX_SHIP_NUM, 4), dtype=np.float32)  #??
 

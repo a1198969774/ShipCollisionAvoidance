@@ -167,11 +167,11 @@ class DQNAgent():
 
     def select_action(self,sess,state,epsilon,model):
         if np.random.rand() < epsilon:
-            action = np.random.randint(0,self._num_actions)
+            action = np.random.randint(0,14) * 5 -35
         else:
             state = state.astype(np.float32) / 255.0
             feed_dict = {model['input_frames'] :state}
-            action = sess.run(model['action'],feed_dict=feed_dict)[0]
+            action = sess.run(model['action'],feed_dict=feed_dict)[0] * 5 -35
         return action
 
     def get_multi_step_sample(self,env,sess,num_step,epsilon):
@@ -228,6 +228,7 @@ class DQNAgent():
         step_for_newenv = 0
         total_reward = 0
         total_loss = 0
+        total_rudder = 0
         plot_action_list = []
         plot_reward_list = []
         plot_sub_reward_list = []
@@ -240,6 +241,8 @@ class DQNAgent():
         while(True):
             next_action = self.select_action(sess, new_state, self._epsilon, self._eval_model)
             roll_state = env.step(next_action)
+            total_rudder += next_action
+            roll_state.append(total_rudder)
             plot_roll_state.append(roll_state)
             old_state, action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
             total_reward += reward
@@ -346,6 +349,7 @@ class DQNAgent():
                 step_for_newenv = 0
                 total_reward = 0
                 total_loss = 0
+                total_rudder = 0
                 plot_action_list = []
                 plot_reward_list = []
                 plot_sub_reward_list = []
