@@ -149,7 +149,7 @@ class envModel(gym.Env):
         self.d = math.sqrt((self.selfship.state[0] - self.goal[0]) ** 2 + (self.selfship.state[1] - self.goal[1]) ** 2)
         self.rel_angle_last = self.rel_angle
         self.rel_angle = self.getRelAngle()
-
+        return self.selfship.roll_state[:]
 
     def getreward(self):
         reward = 0

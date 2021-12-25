@@ -64,7 +64,7 @@ class DQNAgent():
         self._is_terminal_ph = tf.placeholder(tf.float32,name='is_terminal_ph')  ##？？
         self._action_chosen_by_eval_ph = tf.placeholder(tf.int32,[None,2],'action_chosen_by_eval_ph')  ##？？
         self._loss_weight_ph = tf.placeholder(tf.float32,name='loss_weight_ph')  ##？？
-        self._error_op,self._train_op, self._loss_op = self._get_error_and_train_op(self._reward_ph,self._is_terminal_ph,
+        self._error_op, self._train_op, self._loss_op = self._get_error_and_train_op(self._reward_ph,self._is_terminal_ph,
                                                                      self._action_ph,self._action_chosen_by_eval_ph,
                                                                      self._loss_weight_ph)  ##？？
         self.episode = 0
@@ -104,7 +104,7 @@ class DQNAgent():
                                                  momentum=self._rmsp_momentum,epsilon=self._rmsp_epsilon).minimize(loss)
 
             error_op = tf.abs(gathered_outputs - target,name='abs_error')
-            return train_op,error_op
+            return train_op,error_op, loss
 
         else:
             N_atoms = 51
@@ -224,9 +224,10 @@ class DQNAgent():
         goal = env.reset()
         old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
         #initializition
-
+        plot_result_list = []
         step_for_newenv = 0
         total_reward = 0
+        total_loss = 0
         plot_action_list = []
         plot_reward_list = []
         plot_sub_reward_list = []
@@ -291,8 +292,9 @@ class DQNAgent():
                 error, _, loss = sess.run([self._error_op, self._train_op, self._loss_op], feed_dict=feed_dict)
                 self._memory.update(idx_list, error)
             else:
-                _, loss = sess.run(self._train_op, self._loss_op, feed_dict=feed_dict)
+                _, loss = sess.run([self._train_op, self._loss_op], feed_dict=feed_dict)
             plot_loss.append(loss)
+            total_loss += loss
             self._update_times += 1
             if self._beta < BETA_END:
                 self._beta += self._beta_increment
@@ -309,7 +311,9 @@ class DQNAgent():
                 # self.save_model()
                 self.episode += 1
                 # initialization
-                print("episode:%s total_step:%s total_reward:%s epsilon:%s"%( self.episode, step_for_newenv, total_reward, self._epsilon))
+                result_per_epi = "episode:%s total_step:%s total_reward:%s epsilon:%s loss: %s" % (self.episode, step_for_newenv, total_reward, self._epsilon, total_loss)
+                print(result_per_epi)
+                plot_result_list.append(result_per_epi)
                 # plt.plot(plot_reward_list)
                 # plt.show()
                 # plt.plot(plot_action_list)
@@ -341,6 +345,7 @@ class DQNAgent():
 
                 step_for_newenv = 0
                 total_reward = 0
+                total_loss = 0
                 plot_action_list = []
                 plot_reward_list = []
                 plot_sub_reward_list = []
@@ -348,12 +353,14 @@ class DQNAgent():
                 x_list = []
                 y_list = []
                 save_new_state_list = []
-
+                plot_roll_state = []
+                plot_loss = []
                 self.save_model(sess, saver, self.network_name)
 
                 env.reset()
                 old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
             if self.episode == self.args.max_episode:
+                np.savetxt(path + '/total_result.txt', plot_result_list, fmt="%s", delimiter=',')
                 break
 
     def _get_error(self, sess, old_state, action, reward, new_state, is_terminal):
