@@ -156,11 +156,11 @@ class envModel(gym.Env):
         reward_list = []
         reward_list.append(self.d)
         # r1假如上一时刻到目标的距离<这一时刻到目标的距离就会有负的奖励
-        r1 = -0.005 * (self.d - self.d_last) * 2
+        r1 = -0.005 * (self.d - self.d_last) * 2 * 2 / 10
         reward += r1
         reward_list.append(r1)
         # r2 目标船相对本船的方位
-        r2_value = 0.2
+        r2_value = 0.2 / 10
         r2_symble = 0
         if abs(self.rel_angle) < 0.1:
             r2_symble = 1
@@ -187,11 +187,11 @@ class envModel(gym.Env):
         reward_list.append(r2)
 
         # r3 角速度变化即角度变化
-        r3 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3])
+        r3 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3]) / 10
         reward_list.append(r3)
         reward = reward + r3
         #r4右转向
-        r4 = 0.01
+        r4 = 0.01 / 10
         if self.action == 0:
             reward_list.append(0)
         elif self.selfship.last_state[4] > 0 and self.selfship.state[4] < 0:
