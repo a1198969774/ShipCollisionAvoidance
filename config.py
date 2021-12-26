@@ -6,7 +6,7 @@ class Config:
     parser.add_argument('--env', default='SpaceInvaders-v0')
     parser.add_argument('--seed', default=107035, type=int)
     parser.add_argument('--input_shape', default=(200, 200))
-    parser.add_argument('--lstm_input_length', default=2)
+    parser.add_argument('--lstm_input_length', default=4)
     parser.add_argument('--gamma', default=0.99)
     parser.add_argument('--max_step', default=1200)
     parser.add_argument('--max_episode', default=5000)

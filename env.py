@@ -326,6 +326,8 @@ class envModel(gym.Env):
             state = []
             state.append(self.rel_angle)
             state.append(self.rel_angle_last)
+            state.append(self.selfship.roll_state[2])
+            state.append(self.selfship.last_roll_state[2])
             self.old_state = self.new_state[:] if self.new_state is not None else None
             self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
         #self.test_state2(self.new_state)
