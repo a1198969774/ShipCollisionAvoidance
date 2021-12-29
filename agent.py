@@ -273,7 +273,7 @@ class DQNAgent():
         save_new_state_list = []
         plot_roll_state = []
         plot_loss = []
-
+        num_success = 0
         while(True):
             next_action = self.select_action(sess, state_stack, self._epsilon, self._eval_model)
             roll_state = env.step(next_action)
@@ -346,6 +346,8 @@ class DQNAgent():
                 # sess.run(self._update_target_params_ops)
                 self.assign_network_to_target(sess)
             step_for_newenv = step_for_newenv + 1
+            if is_terminal == True:
+                num_success += 1
             if step_for_newenv == self.args.max_step:
                 is_terminal = True
 
@@ -354,7 +356,7 @@ class DQNAgent():
                 # self.save_model()
                 self.episode += 1
                 # initialization
-                result_per_epi = "episode:%s total_step:%s total_reward:%s epsilon:%s loss: %s" % (self.episode, step_for_newenv, total_reward, self._epsilon, total_loss)
+                result_per_epi = "episode:%s num_success:%s total_step:%s total_reward:%s epsilon:%s loss: %s" % (self.episode, num_success, step_for_newenv, total_reward, self._epsilon, total_loss)
                 print(result_per_epi)
                 plot_result_list.append(result_per_epi)
                 # plt.plot(plot_reward_list)
