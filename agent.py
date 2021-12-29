@@ -216,14 +216,49 @@ class DQNAgent():
         # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time + "/model.ckpt")
         # 第二次训练
         save_path = saver.save(sess, network_name+ "/model.ckpt")
+
+        # Initialize input
+
+    def input_initialization(self, state):
+        state_set = []
+        for i in range(self.args.window_size):
+            state_set.append(state)
+        if self.args.is_cnn == 0:
+            state_stack = np.zeros((1, self.args.lstm_input_length, self.args.window_size))   #最終網絡訓練所用狀態
+            for stack_frame in range(self.args.window_size):
+                state_stack[:, :, (self.args.window_size - 1) - stack_frame] = state_set[-1 - stack_frame]
+        else:
+            state_stack = np.zeros((1, self.args.input_shape[0],self.args.input_shape[1], self.args.window_size))
+            for stack_frame in range(self.args.window_size):
+                state_stack[:, :, :, (self.args.window_size - 1) - stack_frame
+                ] = state_set[-1 - stack_frame]
+        return state_stack, state_set
+
+        # Resize input information
+
+    def resize_input(self, state, state_set):
+        state_set.append(state)
+        if self.args.is_cnn == 0:
+            state_stack = np.zeros((1, self.args.lstm_input_length, self.args.window_size))
+            for stack_frame in range(self.args.lstm_input_length):
+                state_stack[:, :, (self.args.window_size - 1) - stack_frame] = state_set[-1 - stack_frame]
+        else:
+            state_stack = np.zeros((1, self.args.input_shape[0], self.args.input_shape[1], self.args.window_size))
+            for stack_frame in range(self.args.window_size):
+                state_stack[:, :, :, (self.args.window_size - 1) - stack_frame] = state_set[-1 - stack_frame]
+        del state_set[0]
+        return state_stack, state_set
+
+
     def fit1(self,sess, saver, env):
         path = "./saved_result/" + self.date_time
         while(os.path.exists(path)):
             path = path + "1"
         os.makedirs(path)
         goal = env.reset()
-        old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
-        #initializition
+        action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
+        state_stack,state_set = self.input_initialization(new_state)
+
         plot_result_list = []
         step_for_newenv = 0
         total_reward = 0
@@ -238,16 +273,18 @@ class DQNAgent():
         save_new_state_list = []
         plot_roll_state = []
         plot_loss = []
+
         while(True):
-            next_action = self.select_action(sess, new_state, self._epsilon, self._eval_model)
+            next_action = self.select_action(sess, state_stack, self._epsilon, self._eval_model)
             roll_state = env.step(next_action)
             total_rudder += next_action
             roll_state.append(total_rudder)
             plot_roll_state.append(roll_state)
-            old_state, action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
+            action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
             total_reward += reward
 
-            #print(sub_reward)
+
+            next_state_stack, state_set = self.resize_input(new_state, state_set)
 
             plot_action_list.append(next_action)
             plot_reward_list.append(reward)
@@ -256,15 +293,16 @@ class DQNAgent():
             y_list.append(y)
             heading_list.append(heading)
             save_new_state_list.append(str(new_state))
-            #resize
 
-            self._memory.append(old_state, action, reward, new_state, is_terminal)  # 插入数据
+
+            self._memory.append(state_stack, action, reward, next_state_stack, is_terminal)  # 插入数据
+            state_stack = next_state_stack
             if self._epsilon > EPSILON_END:
                 self._epsilon += self._epsilon_increment
             #训练
             if self._is_per == 1:
                 (old_state_list, action_list, reward_list, new_state_list, is_terminal_list), \
-                idx_list, p_list, sum_p, count = self._memory.sample(self._batch_size)
+                idx_list, p_list, sum_p, count = self._memory.sample(self._batch_size, self.args.is_cnn)
             else:
                 old_state_list, action_list, reward_list, new_state_list, is_terminal_list \
                     = self._memory.sample(self._batch_size, self.args.is_cnn)
@@ -296,8 +334,10 @@ class DQNAgent():
                 self._memory.update(idx_list, error)
             else:
                 _, loss = sess.run([self._train_op, self._loss_op], feed_dict=feed_dict)
+
             plot_loss.append(loss)
             total_loss += loss
+
             self._update_times += 1
             if self._beta < BETA_END:
                 self._beta += self._beta_increment
@@ -359,10 +399,12 @@ class DQNAgent():
                 save_new_state_list = []
                 plot_roll_state = []
                 plot_loss = []
+
                 self.save_model(sess, saver, self.network_name)
 
                 env.reset()
-                old_state, action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
+                action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
+                state_stack, state_set = self.input_initialization(new_state)
             if self.episode == self.args.max_episode:
                 np.savetxt(path + '/total_result.txt', plot_result_list, fmt="%s", delimiter=',')
                 break

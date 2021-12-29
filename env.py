@@ -321,7 +321,8 @@ class envModel(gym.Env):
             # print("shape of image matrix={}".format(self.image_matrix.shape))
 
             self.old_state = self.new_state[:] if self.new_state is not None else None
-            self.new_state = image_matrix.reshape((1, self.args.input_shape[0], self.args.input_shape[1], 1))
+            # self.new_state = image_matrix.reshape((1, self.args.input_shape[0], self.args.input_shape[1], 1))
+            self.new_state = image_matrix
         else:
             state = []
             state.append(self.rel_angle)
@@ -329,13 +330,14 @@ class envModel(gym.Env):
             state.append(self.selfship.roll_state[2])
             state.append(self.selfship.last_roll_state[2])
             self.old_state = self.new_state[:] if self.new_state is not None else None
-            self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
+            # self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
+            self.new_state = state
         #self.test_state2(self.new_state)
         reward, sub_reward, is_terminal= self.getreward()
         # new_state = np.random.rand(1, 80, 80, 4)
         # new_state = old_state
 
-        return self.old_state, self.action, reward, self.new_state, is_terminal, sub_reward, self.selfship.state[0], self.selfship.state[1],self.selfship.state[4]
+        return self.action, reward, self.new_state, is_terminal, sub_reward, self.selfship.state[0], self.selfship.state[1],self.selfship.state[4]
 
     def render(self, mode='human'):
         # 按照gym的方式创建一个viewer, 使用self.scale控制缩放大小

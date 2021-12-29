@@ -12,7 +12,7 @@ class Config:
     parser.add_argument('--max_episode', default=5000)
     parser.add_argument('--epsilon', default=0.1)
     parser.add_argument('--learning_rate', default=0.00025)
-    parser.add_argument('--window_size', default=1, type=int)
+    parser.add_argument('--window_size', default=4, type=int)
     parser.add_argument('--batch_size', default=32, type=int)
     # parser.add_argument('--num_process', default=1, type = int)
     parser.add_argument('--num_iteration', default=20000000,     type=int)
