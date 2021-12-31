@@ -33,7 +33,7 @@ class envModel(gym.Env):
         self.args.input_shape = tuple(self.args.input_shape)
         self.action = 0
 
-        self.d_min = 20
+        self.d_min = 50
         self.reset()
         self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
 
