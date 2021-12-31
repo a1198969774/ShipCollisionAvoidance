@@ -217,7 +217,7 @@ class envModel(gym.Env):
         obs_x = x - distance_start * math.cos(obs_angle)
         obs_y = y - distance_start * math.sin(obs_angle)
         # plt.plot([obs_x, x], [obs_y, y])
-        return obs_x, obs_y, obs_angle, obs_speed
+        return obs_x, obs_y, obs_angle / math.pi * 180, obs_speed
 
     switch = {'encounter': type_encounter,  # 注意此处不要加括号
               'overtake': type_overtake,
