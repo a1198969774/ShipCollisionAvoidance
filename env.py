@@ -514,6 +514,7 @@ class envModel(gym.Env):
             # self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
             self.new_state = state
         #self.test_state2(self.new_state)
+
         reward, sub_reward, is_terminal= self.getreward()
         # new_state = np.random.rand(1, 80, 80, 4)
         # new_state = old_state
