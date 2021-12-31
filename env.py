@@ -413,6 +413,12 @@ class envModel(gym.Env):
                 # reward += r4
                 # reward_list.append(r4)
                 pass
+
+        if math.sqrt((self.selfship.state[0] - self.obship1.state[0]) ** 2 +(self.selfship.state[1] - self.obship1.state[1]) ** 2) < 200:
+            reward_list.append(-10)
+            reward = reward - 10
+            print("Get -10 reward------obstacle")
+            self.is_terminal = True
         # 到达目标点有正的奖励
         if self.d < self.d_min:
             reward_list.append(20)
