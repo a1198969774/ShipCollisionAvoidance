@@ -525,7 +525,7 @@ class envModel(gym.Env):
         # new_state = np.random.rand(1, 80, 80, 4)
         # new_state = old_state
 
-        return self.action, reward, self.new_state, is_terminal, sub_reward, self.selfship.state[0], self.selfship.state[1],self.selfship.state[4]
+        return self.action, reward, self.new_state, is_terminal, sub_reward, self.selfship.state[0], self.selfship.state[1],self.selfship.state[4], self.obship1.state[0], self.obship1.state[1]
 
     def render(self, mode='human'):
         # 按照gym的方式创建一个viewer, 使用self.scale控制缩放大小

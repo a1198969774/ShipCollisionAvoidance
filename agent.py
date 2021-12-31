@@ -256,7 +256,7 @@ class DQNAgent():
             path = path + "1"
         os.makedirs(path)
         goal = env.reset()
-        action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
+        action, reward, new_state, is_terminal, _, _1, _2, _3, _4, _5 = env.get_state()
         state_stack,state_set = self.input_initialization(new_state)
 
         plot_result_list = []
@@ -269,6 +269,8 @@ class DQNAgent():
         plot_sub_reward_list = []
         x_list = []
         y_list = []
+        x_obs_list = []
+        y_obs_list = []
         heading_list = []
         save_new_state_list = []
         plot_roll_state = []
@@ -280,7 +282,7 @@ class DQNAgent():
             total_rudder += next_action
             roll_state.append(total_rudder)
             plot_roll_state.append(roll_state)
-            action, reward, new_state, is_terminal, sub_reward, x, y, heading = env.get_state()
+            action, reward, new_state, is_terminal, sub_reward, x, y, heading, obs_x, obs_y = env.get_state()
             total_reward += reward
 
 
@@ -291,6 +293,8 @@ class DQNAgent():
             plot_sub_reward_list.append(sub_reward)
             x_list.append(x)
             y_list.append(y)
+            x_obs_list.append(obs_x)
+            y_obs_list.append(obs_y)
             heading_list.append(heading)
             save_new_state_list.append(str(new_state))
 
@@ -366,11 +370,12 @@ class DQNAgent():
                 if step_for_newenv < self.args.max_step:
                     plt.close()
                     plt.plot(x_list, y_list)
-                    plt.plot(goal[0], goal[1],marker='v')
+                    plt.plot(x_obs_list, y_obs_list)
+                    plt.plot(goal[0], goal[1], marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
                     #plt.show()
-                    plt.xlim(1500,8500)
-                    plt.ylim(0,7000)
+                    plt.xlim(1500, 8500)
+                    plt.ylim(0, 7000)
                     plt.savefig(path + '/' + str(self.episode) + '.png')
                     #np.savetxt(path + '/' + str(self.episode) + 'state.txt', save_new_state_list, fmt="%s", delimiter=',')
                     np.savetxt(path + '/' + str(self.episode) + 'action.txt', plot_action_list, fmt="%s", delimiter=',')
@@ -398,6 +403,8 @@ class DQNAgent():
                 heading_list = []
                 x_list = []
                 y_list = []
+                x_obs_list = []
+                y_obs_list = []
                 save_new_state_list = []
                 plot_roll_state = []
                 plot_loss = []
@@ -405,7 +412,7 @@ class DQNAgent():
                 self.save_model(sess, saver, self.network_name)
 
                 env.reset()
-                action, reward, new_state, is_terminal, _, _1, _2, _3 = env.get_state()
+                action, reward, new_state, is_terminal, _, _1, _2, _3, _4, _5 = env.get_state()
                 state_stack, state_set = self.input_initialization(new_state)
             if self.episode == self.args.max_episode:
                 np.savetxt(path + '/total_result.txt', plot_result_list, fmt="%s", delimiter=',')
