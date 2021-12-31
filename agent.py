@@ -240,7 +240,7 @@ class DQNAgent():
         state_set.append(state)
         if self.args.is_cnn == 0:
             state_stack = np.zeros((1, self.args.lstm_input_length, self.args.window_size))
-            for stack_frame in range(self.args.lstm_input_length):
+            for stack_frame in range(self.args.window_size):
                 state_stack[:, :, (self.args.window_size - 1) - stack_frame] = state_set[-1 - stack_frame]
         else:
             state_stack = np.zeros((1, self.args.input_shape[0], self.args.input_shape[1], self.args.window_size))

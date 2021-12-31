@@ -17,7 +17,7 @@ ENCOUNTER = 1
 CROSS_LEFT = 2
 CROSS_RIGHT = 3
 OVERTAKE = 4
-encounter_type = OVERTAKE
+encounter_type = CROSS_RIGHT
 class envModel(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -37,6 +37,194 @@ class envModel(gym.Env):
         self.reset()
         self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
 
+    def type_encounter(agent_x, agent_y, agent_angle):
+        k1 = math.tan(agent_angle)
+        b1 = agent_y - k1 * agent_x
+        if agent_angle < 0:
+            obs_angle = agent_angle - math.pi
+        else:
+            obs_angle = agent_angle + math.pi
+        while (True):
+            deta_angle = np.random.normal(0, 0.5) * math.pi / 2
+            if deta_angle > math.pi * (-5) / 180 and deta_angle < math.pi * 5 / 180:
+                break
+        obs_angle += deta_angle
+        if obs_angle > math.pi:
+            obs_angle -= math.pi * 2
+        if obs_angle < -math.pi:
+            obs_angle += math.pi * 2
+        k2 = math.tan(obs_angle)
+        b2 = agent_y - k2 * agent_x
+        goal_x = agent_x + math.cos(agent_angle) * VIEWPORT_W
+        goal_y = agent_y + math.sin(agent_angle) * VIEWPORT_W
+        k3 = k2
+        b3 = goal_y - k3 * goal_x
+        if b2 > b3:
+            max = b2
+            min = b3
+        else:
+            max = b3
+            min = b2
+        deta_b = max - min
+        while (True):
+            rand_ratio = np.random.normal(0.5, 0.5)
+            if rand_ratio > 0.2 and rand_ratio < 0.8:
+                break
+        b4 = min + rand_ratio * deta_b
+        k4 = k2
+        x = (b4 - b1) / (k1 - k4)
+        y = k1 * x + b1
+        test = (x - agent_x) / math.cos(agent_angle)
+        distance_agent = math.sqrt((x - agent_x) ** 2 + (y - agent_y) ** 2)
+        obs_speed = 5
+        distance_start = distance_agent / 6 * obs_speed
+        obs_x = x - distance_start * math.cos(obs_angle)
+        obs_y = y - distance_start * math.sin(obs_angle)
+        # plt.plot([obs_x, x], [obs_y, y])
+        return obs_x, obs_y, obs_angle, obs_speed
+
+    def type_overtake(agent_x, agent_y, agent_angle):
+        k1 = math.tan(agent_angle)
+        b1 = agent_y - k1 * agent_x
+        obs_angle = agent_angle
+        while (True):
+            deta_angle = np.random.normal(0, 0.1) * math.pi / 2
+            if deta_angle > math.pi * (-67.5) / 180 and deta_angle < math.pi * 67.5 / 180:
+                break
+        obs_angle += deta_angle
+        if obs_angle > math.pi:
+            obs_angle -= math.pi * 2
+        if obs_angle < -math.pi:
+            obs_angle += math.pi * 2
+        k2 = math.tan(obs_angle)
+        b2 = agent_y - k2 * agent_x
+        goal_x = agent_x + math.cos(agent_angle) * VIEWPORT_W
+        goal_y = agent_y + math.sin(agent_angle) * VIEWPORT_W
+        k3 = k2
+        b3 = goal_y - k3 * goal_x
+        if b2 > b3:
+            max = b2
+            min = b3
+        else:
+            max = b3
+            min = b2
+        deta_b = max - min
+        while (True):
+            rand_ratio = np.random.normal(0.5, 0.5)
+            if rand_ratio > 0.35 and rand_ratio < 0.65:
+                break
+        b4 = min + rand_ratio * deta_b
+        k4 = k2
+        x = (b4 - b1) / (k1 - k4)
+        y = k1 * x + b1
+        test = (x - agent_x) / math.cos(agent_angle)
+        distance_agent = math.sqrt((x - agent_x) ** 2 + (y - agent_y) ** 2)
+        obs_speed = 4
+        distance_start = distance_agent / 6 * obs_speed
+        obs_x = x - distance_start * math.cos(obs_angle)
+        obs_y = y - distance_start * math.sin(obs_angle)
+        # plt.plot([obs_x, x], [obs_y, y])
+        return obs_x, obs_y, obs_angle, obs_speed
+
+    def type_cross_left(agent_x, agent_y, agent_angle):
+        k1 = math.tan(agent_angle)
+        b1 = agent_y - k1 * agent_x
+        if agent_angle < -math.pi / 2:
+            obs_angle = agent_angle + 3 * math.pi / 2
+        else:
+            obs_angle = agent_angle - math.pi / 2
+        while (True):
+            deta_angle = np.random.normal(-0.3375, 0.5) * math.pi / 2
+            if deta_angle > math.pi * (-85) / 180 and deta_angle < math.pi * 22.5 / 180:
+                break
+        obs_angle += deta_angle
+        if obs_angle > math.pi:
+            obs_angle -= math.pi * 2
+        if obs_angle < -math.pi:
+            obs_angle += math.pi * 2
+        k2 = math.tan(obs_angle)
+        b2 = agent_y - k2 * agent_x
+        goal_x = agent_x + math.cos(agent_angle) * VIEWPORT_W
+        goal_y = agent_y + math.sin(agent_angle) * VIEWPORT_W
+        k3 = k2
+        b3 = goal_y - k3 * goal_x
+        if b2 > b3:
+            max = b2
+            min = b3
+        else:
+            max = b3
+            min = b2
+        deta_b = max - min
+        while (True):
+            rand_ratio = np.random.normal(0.5, 0.5)
+            if rand_ratio > 0.2 and rand_ratio < 0.5:
+                break
+        b4 = min + rand_ratio * deta_b
+        k4 = k2
+        x = (b4 - b1) / (k1 - k4)
+        y = k1 * x + b1
+        test = (x - agent_x) / math.cos(agent_angle)
+        distance_agent = math.sqrt((x - agent_x) ** 2 + (y - agent_y) ** 2)
+        obs_speed = 5
+        distance_start = distance_agent / 6 * obs_speed
+        obs_x = x - distance_start * math.cos(obs_angle)
+        obs_y = y - distance_start * math.sin(obs_angle)
+        # plt.plot([obs_x, x], [obs_y, y])
+        return obs_x, obs_y, obs_angle, obs_speed
+
+    def type_cross_right(agent_x, agent_y, agent_angle):
+        k1 = math.tan(agent_angle)
+        b1 = agent_y - k1 * agent_x
+        if agent_angle > math.pi / 2:
+            obs_angle = agent_angle - 3 * math.pi / 2
+        else:
+            obs_angle = agent_angle + math.pi / 2
+        while (True):
+            deta_angle = np.random.normal(0.3375, 0.5) * math.pi / 2
+            if deta_angle > math.pi * (-22.5) / 180 and deta_angle < math.pi * 85 / 180:
+                # print(deta_angle)
+                break
+        obs_angle += deta_angle
+        if obs_angle > math.pi:
+            obs_angle -= math.pi * 2
+        if obs_angle < -math.pi:
+            obs_angle += math.pi * 2
+        k2 = math.tan(obs_angle)
+        b2 = agent_y - k2 * agent_x
+        goal_x = 5000
+        goal_y = 6500
+        k3 = k2
+        b3 = goal_y - k3 * goal_x
+        if b2 > b3:
+            max = b2
+            min = b3
+        else:
+            max = b3
+            min = b2
+        deta_b = max - min
+        while (True):
+            rand_ratio = np.random.normal(0.5, 0.5)
+            if rand_ratio > 0.5 and rand_ratio < 0.8:
+                break
+        b4 = min + rand_ratio * deta_b
+        k4 = k2
+        x = (b4 - b1) / (k1 - k4)
+        y = k4 * x + b4
+        test = (x - agent_x) / math.cos(agent_angle)
+        distance_agent = math.sqrt((x - agent_x) ** 2 + (y - agent_y) ** 2)
+        obs_speed = 5.14
+        distance_start = distance_agent / 6.168 * obs_speed
+        obs_x = x - distance_start * math.cos(obs_angle)
+        obs_y = y - distance_start * math.sin(obs_angle)
+        # plt.plot([obs_x, x], [obs_y, y])
+        return obs_x, obs_y, obs_angle, obs_speed
+
+    switch = {'encounter': type_encounter,  # 注意此处不要加括号
+              'overtake': type_overtake,
+              'cross_left': type_cross_left,
+              'cross_right': type_cross_right,
+              }
+
     def reset(self):
         # 管理所有船的列表， reset时先清空
         self.ships = []
@@ -48,9 +236,10 @@ class envModel(gym.Env):
         # 生成agent
         self.selfship = self.randship(SHIP_TYPE_SELF, encounter_type)
 
+        self.obship1 = self.randship(SHIP_TYPE_OTHER, encounter_type)
         # 把agent加入管理列表
         self.ships.append(self.selfship)
-
+        self.ships.append(self.obship1)
         self.goal = self.randgoal()
         # 更新观察数据
         self.state = np.vstack([ship.state for (_, ship) in enumerate(self.ships)])
@@ -60,6 +249,10 @@ class envModel(gym.Env):
 
         self.rel_angle = self.getRelAngle()
         self.rel_angle_last = self.rel_angle
+
+        self.rel_obs1_angle = self.getObs1RelAngle()
+        self.rel_obs1_angle_last = self.rel_obs1_angle
+
         self.is_terminal = False
         self.new_state = None
         # 返回
@@ -71,16 +264,25 @@ class envModel(gym.Env):
         heading = self.angleToHeading(self.selfship.state[4])
         result = angle - heading#目标船在本船右方为正
         return result
+
+    def getObs1RelAngle(self):
+        angle = abs(math.atan2((self.obship1.state[1] - self.selfship.state[1]),
+                       (self.obship1.state[0] - self.selfship.state[0]))) / math.pi * 180
+        heading = self.angleToHeading(self.selfship.state[4])
+        result = angle - heading#目标船在本船右方为正
+        return result
+
     #@staticmethod
-    def randship(self,_t: np.int,type):
+    def randship(self,ship_type: np.int,type):
         # _t 为船类型（agent或其它）
         # Ship class 参数为坐标x,y,类型_t
         # VIEWPORT_W, VIEWPORT_H为地图宽高
         #_b = Ship(np.random.rand(1)[0] * VIEWPORT_W, np.random.rand(1)[0] * VIEWPORT_H, _t,type)
-        if _t == SHIP_TYPE_SELF:
-            _b = Ship(5000,1000,self.args.self_speed,self.args.self_heading, _t, type)
+        if ship_type == SHIP_TYPE_SELF:
+            _b = Ship(5000, 1000, self.args.self_speed, self.args.self_heading, ship_type, type)
         else:
-            _b = Ship(np.random.rand(1)[0] * VIEWPORT_W, np.random.rand(1)[0] * VIEWPORT_H, _t,type)
+            obs1_x, obs1_y, obs1_angle, obs1_speed = self.switch.get("cross_right")(5000, 1000, math.pi / 2)
+            _b = Ship(obs1_x, obs1_y, self.args.self_speed, self.angleToHeading(obs1_angle), ship_type,type)
         return _b
 
     def randgoal(self):
@@ -124,6 +326,8 @@ class envModel(gym.Env):
                 ship.last_state = ship.state[:]#x,y,v,w(弧度),yaw(方位角 度数),vx,vy ##计算角与方位角
                 ship.state[0] = ship.state[0] + ship.state[2] * math.cos(self.headingToAngle(ship.state[4]))
                 ship.state[1] = ship.state[1] + ship.state[2] * math.sin(self.headingToAngle(ship.state[4]))
+                self.rel_obs1_angle_last = self.rel_obs1_angle
+                self.rel_obs1_angle = self.getObs1RelAngle()
             else:
                 #ship.y += 5
                 #ship.state[1] = ship.y
@@ -249,31 +453,6 @@ class envModel(gym.Env):
                         total += 1
         print("total point num is：", total)
 
-    def input_initialization(self, env_info):
-        state = env_info[0]  # laser info + self state
-        state_set = []
-        for i in range(self.Num_skipFrame * self.Num_stackFrame):
-            state_set.append(state)
-        state_stack = np.zeros((self.Num_stackFrame, self.Num_dataSize))
-        for stack_frame in range(self.Num_stackFrame):
-            state_stack[(self.Num_stackFrame - 1) - stack_frame,
-            :] = state_set[-1 - (self.Num_skipFrame * stack_frame)]
-
-        observation = env_info[1]  # image info
-        observation_set = []
-        for i in range(self.Num_skipFrame * self.Num_stackFrame):
-            observation_set.append(observation)
-        # 使用观察组根据跳帧和堆叠帧的数量堆叠帧
-        observation_stack = np.zeros(
-            (self.img_size, self.img_size, self.Num_stackFrame))
-        # print("shape of observation stack={}".format(observation_stack.shape))
-        for stack_frame in range(self.Num_stackFrame):
-            observation_stack[:, :, stack_frame] = observation_set[-1 -
-                                                                   (self.Num_skipFrame * stack_frame)]
-        observation_stack = np.uint8(observation_stack)
-
-        return observation_stack, observation_set, state_stack, state_set
-
     def test_state1(self, state):
         total = 0
         list = state.tolist()
@@ -329,6 +508,8 @@ class envModel(gym.Env):
             state.append(self.rel_angle_last)
             state.append(self.selfship.roll_state[2])
             state.append(self.selfship.last_roll_state[2])
+            state.append(self.rel_obs1_angle)
+            state.append(self.rel_obs1_angle_last)
             self.old_state = self.new_state[:] if self.new_state is not None else None
             # self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
             self.new_state = state
@@ -371,6 +552,9 @@ class envModel(gym.Env):
         transform.set_translation(x, y)
         self.viewer.draw_circle(r, 30, color=c).add_attr(transform)
 
+
+
+
     def close(self):
         pass
 
@@ -401,11 +585,6 @@ class Ship():
         self.encounter_type = type
 
 
-
-
-
-    def state(self):
-        return [self.x, self.y, self.s, self.t]
 
 
 if __name__ == '__main__':
