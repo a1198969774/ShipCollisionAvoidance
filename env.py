@@ -414,7 +414,7 @@ class envModel(gym.Env):
                 # reward_list.append(r4)
                 pass
 
-        if math.sqrt((self.selfship.state[0] - self.obship1.state[0]) ** 2 +(self.selfship.state[1] - self.obship1.state[1]) ** 2) < 200:
+        if math.sqrt((self.selfship.state[0] - self.obship1.state[0]) ** 2 +(self.selfship.state[1] - self.obship1.state[1]) ** 2) < 555.6:
             reward_list.append(-10)
             reward = reward - 10
             print("Get -10 reward------obstacle")
