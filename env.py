@@ -17,7 +17,7 @@ ENCOUNTER = 1
 CROSS_LEFT = 2
 CROSS_RIGHT = 3
 OVERTAKE = 4
-encounter_type = CROSS_RIGHT
+encounter_type = OVERTAKE
 class envModel(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -98,8 +98,10 @@ class envModel(gym.Env):
             obs_angle += math.pi * 2
         k2 = math.tan(obs_angle)
         b2 = agent_y - k2 * agent_x
-        goal_x = agent_x + math.cos(agent_angle) * VIEWPORT_W
-        goal_y = agent_y + math.sin(agent_angle) * VIEWPORT_W
+        # goal_x = agent_x + math.cos(agent_angle) * VIEWPORT_W
+        # goal_y = agent_y + math.sin(agent_angle) * VIEWPORT_W
+        goal_x = 5000
+        goal_y = 6500
         k3 = k2
         b3 = goal_y - k3 * goal_x
         if b2 > b3:
@@ -111,20 +113,20 @@ class envModel(gym.Env):
         deta_b = max - min
         while (True):
             rand_ratio = np.random.normal(0.5, 0.5)
-            if rand_ratio > 0.35 and rand_ratio < 0.65:
+            if rand_ratio > 0.5 and rand_ratio < 0.8:
                 break
         b4 = min + rand_ratio * deta_b
         k4 = k2
         x = (b4 - b1) / (k1 - k4)
-        y = k1 * x + b1
+        y = k4 * x + b4
         test = (x - agent_x) / math.cos(agent_angle)
         distance_agent = math.sqrt((x - agent_x) ** 2 + (y - agent_y) ** 2)
-        obs_speed = 4
-        distance_start = distance_agent / 6 * obs_speed
+        obs_speed = 3.5
+        distance_start = distance_agent / 6.618 * obs_speed
         obs_x = x - distance_start * math.cos(obs_angle)
         obs_y = y - distance_start * math.sin(obs_angle)
         # plt.plot([obs_x, x], [obs_y, y])
-        return obs_x, obs_y, obs_angle, obs_speed
+        return obs_x, obs_y, obs_angle / math.pi * 180, obs_speed
 
     def type_cross_left(agent_x, agent_y, agent_angle):
         k1 = math.tan(agent_angle)
@@ -281,7 +283,7 @@ class envModel(gym.Env):
         if ship_type == SHIP_TYPE_SELF:
             _b = Ship(5000, 1000, self.args.self_speed, self.args.self_heading, ship_type, type)
         else:
-            obs1_x, obs1_y, obs1_angle, obs1_speed = self.switch.get("cross_right")(5000, 1000, math.pi / 2)
+            obs1_x, obs1_y, obs1_angle, obs1_speed = self.switch.get("overtake")(5000, 1000, math.pi / 2)
             _b = Ship(obs1_x, obs1_y, self.args.self_speed, self.angleToHeading(obs1_angle), ship_type,type)
         return _b
 
@@ -391,16 +393,16 @@ class envModel(gym.Env):
         reward_list.append(r2)
 
         # r3 角速度变化即角度变化
-        r3 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3]) / 10
+        r3 = - 5 * abs(self.selfship.state[3] - self.selfship.last_state[3]) * 10
         reward_list.append(r3)
         reward = reward + r3
         #r4右转向
-        r4 = 0.01 / 10
+        r4 = 0.01
         if self.action == 0:
             reward_list.append(0)
         elif self.selfship.last_state[4] > 0 and self.selfship.state[4] < 0:
             reward += -r4
-            reward_list.append(0)
+            reward_list.append(-r4)
         elif self.selfship.last_state[4] < 0 and self.selfship.state[4] > 0:
             # reward += r4
             # reward_list.append(r4)
@@ -408,11 +410,12 @@ class envModel(gym.Env):
         else:
             if self.selfship.state[4] > self.selfship.last_state[4]:
                 reward -= r4
-                reward_list.append(0)
+                reward_list.append(-r4)
             else:
                 # reward += r4
                 # reward_list.append(r4)
                 pass
+
 
         if math.sqrt((self.selfship.state[0] - self.obship1.state[0]) ** 2 +(self.selfship.state[1] - self.obship1.state[1]) ** 2) < 555.6:
             reward_list.append(-10)

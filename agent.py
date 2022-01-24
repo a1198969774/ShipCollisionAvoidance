@@ -77,7 +77,8 @@ class DQNAgent():
         while (os.path.exists(self.network_name)):
             self.network_name += "1"
 
-
+        self.action = 0
+        self.last_action = 0
     def _get_error_and_train_op(self,reward_ph,
                                 is_terminal_ph,
                                 action_ph,
@@ -166,12 +167,22 @@ class DQNAgent():
             return error_op, train_op, loss
 
     def select_action(self,sess,state,epsilon,model):
+        self.last_action = self.action
         if np.random.rand() < epsilon:
             action = np.random.randint(0,14) * 5 -35
         else:
             state = state.astype(np.float32) / 255.0
             feed_dict = {model['input_frames'] :state}
             action = sess.run(model['action'],feed_dict=feed_dict)[0] * 5 -35
+        if self.last_action * action >= 0:
+            self.action =action
+        else:
+            if np.random.rand() < epsilon:
+                action = np.random.randint(0, 14) * 5 - 35
+            else:
+                state = state.astype(np.float32) / 255.0
+                feed_dict = {model['input_frames']: state}
+                action = sess.run(model['action'], feed_dict=feed_dict)[0] * 5 - 35
         return action
 
     def get_multi_step_sample(self,env,sess,num_step,epsilon):
