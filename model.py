@@ -33,6 +33,42 @@ def create_lstm_network(input_frames,trainable):
     flat_output2 = tf.reshape(rnn_out, [-1, len(rnn_out) * Num_cellState], name='flat_output2')
     return flat_output2, len(rnn_out) * Num_cellState, [cell], rnn_out
 
+def create_lstm_conv_network(input_frames,trainable):
+    conv1_W = tf.get_variable(shape=[8, 8, 1, 16], name='conv1_W',  ## 4-1
+                              trainable=trainable, initializer=tf.contrib.layers.xavier_initializer())
+    conv1_b = tf.Variable(tf.zeros([16], dtype=tf.float32),
+                          name='conv1_b', trainable=trainable)
+    conv1 = tf.nn.conv2d(input_frames[1], conv1_W, strides=[1, 4, 4, 1],
+                         padding='VALID', name='conv1')
+    # (batch size, 20, 20, 16)
+    output1 = tf.nn.relu(conv1 + conv1_b, name='output1')
+    conv2_W = tf.get_variable(shape=[4, 4, 16, 32], name='conv2_W',
+                              trainable=trainable, initializer=tf.contrib.layers.xavier_initializer())
+    conv2_b = tf.Variable(tf.zeros([32], dtype=tf.float32), name='conv2_b',
+                          dtype=tf.float32, trainable=trainable)
+    conv2 = tf.nn.conv2d(output1, conv2_W, strides=[1, 2, 2, 1],
+                         padding='VALID', name='conv2')
+    # (batch size, 9, 9, 32)
+    output2 = tf.nn.relu(conv2 + conv2_b, name='output2')
+
+
+    # flat_output2 = tf.reshape(output2, [-1, flat_output2_size], name='flat_output2')
+
+    Num_cellState = 256
+    x_unstack = tf.unstack(input_frames[0], axis=2)  # 按axis切分成 axis個數組
+    cell = tf.contrib.rnn.BasicLSTMCell(num_units=Num_cellState)
+    rnn_out, rnn_state = tf.nn.static_rnn(
+        inputs=x_unstack, cell=cell, dtype=tf.float32)
+
+    h_pool3_flat = tf.reshape(
+        output2, [-1, 61 * 61 * 32])  # 将tensor打平到vector中
+    rnn_out = rnn_out[-1]
+
+    flat_output2 = tf.concat([h_pool3_flat, rnn_out], axis=1, name='flat_output2')
+    # flat_output2 = tf.reshape(h_concat, [-1, len(rnn_out) * Num_cellState + flat_output2_size], name='flat_output2')
+    flat_output2_size = 119072 + 256
+    return flat_output2, flat_output2_size, [conv1_W, conv1_b, conv2_W, conv2_b, cell], rnn_out
+
 def create_deep_q_network(input_frames,num_actions,create_network_cnn_or_lstm,trainable,noisy):
     flat_output,flat_output_size,parameter_list, rnn_out = create_network_cnn_or_lstm(input_frames,trainable)
 
@@ -119,9 +155,17 @@ def create_model(window, is_cnn, input_shape, input_length, num_actions,model_na
     with tf.variable_scope(model_name):
         if is_cnn == 1:
             input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
-        else:
+        elif is_cnn ==0:
             input_frames = tf.placeholder(tf.float32, [None, input_length, window],
                                           name='input_frames')
+        else:
+            input_frames2 = tf.placeholder(tf.float32, [None, input_shape[0], input_shape[1], window],
+                                          name='input_frames2')
+            input_frames1 = tf.placeholder(tf.float32, [None, input_length, window],
+                                          name='input_frames1')
+            input_frames = []
+            input_frames.append(input_frames1)
+            input_frames.append(input_frames2)
         q_network,parameter_list, out1, out2, rnn_out = create_network_fn(input_frames,num_actions,create_network_cnn_or_lstm,trainable,noisy)
         # tf.reduce_max按行求最值
         mean_max_q = tf.reduce_mean(tf.reduce_max(q_network,axis=[1]),name='mean_max_q')
@@ -151,9 +195,17 @@ def create_distributional_model(window, is_cnn, input_shape, input_length, num_a
     with tf.variable_scope(model_name):
         if is_cnn == 1:
             input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
-        else:
+        elif is_cnn == 0:
             input_frames = tf.placeholder(tf.float32, [None, input_length, window],
                                           name='input_frames')
+        else:
+            input_frames2 = tf.placeholder(tf.float32, [None, input_shape[0], input_shape[1], window],
+                                           name='input_frames2')
+            input_frames1 = tf.placeholder(tf.float32, [None, input_length, window],
+                                           name='input_frames1')
+            input_frames = []
+            input_frames.append(input_frames1)
+            input_frames.append(input_frames2)
         q_distributional_network,parameter_list = create_network_fn(input_frames,num_actions * N_atoms,create_network_cnn_or_lstm,trainable,noisy)
 
         q_distributional_network = tf.reshape(q_distributional_network,[-1,num_actions,N_atoms])

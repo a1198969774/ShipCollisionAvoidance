@@ -232,32 +232,71 @@ class DQNAgent():
 
     def input_initialization(self, state):
         state_set = []
-        for i in range(self.args.window_size):
-            state_set.append(state)
         if self.args.is_cnn == 0:
+            for i in range(self.args.window_size):
+                state_set.append(state)
             state_stack = np.zeros((1, self.args.lstm_input_length, self.args.window_size))   #最終網絡訓練所用狀態
             for stack_frame in range(self.args.window_size):
                 state_stack[:, :, (self.args.window_size - 1) - stack_frame] = state_set[-1 - stack_frame]
-        else:
+        elif self.args.is_cnn == 1:
+            for i in range(self.args.window_size):
+                state_set.append(state)
             state_stack = np.zeros((1, self.args.input_shape[0],self.args.input_shape[1], self.args.window_size))
             for stack_frame in range(self.args.window_size):
                 state_stack[:, :, :, (self.args.window_size - 1) - stack_frame
                 ] = state_set[-1 - stack_frame]
+        else:
+            state_set1 = []
+            for i in range(self.args.window_size):
+                state_set1.append(state[0])
+            state_stack1 = np.zeros((1, self.args.lstm_input_length, self.args.window_size))   #最終網絡訓練所用狀態
+            for stack_frame in range(self.args.window_size):
+                state_stack1[:, :, (self.args.window_size - 1) - stack_frame] = state_set1[-1 - stack_frame]
+
+            state_set2 = []
+            for i in range(self.args.window_size):
+                state_set2.append(state[1])
+            state_stack2 = np.zeros((1, self.args.input_shape[0],self.args.input_shape[1], self.args.window_size))
+            for stack_frame in range(self.args.window_size):
+                state_stack2[:, :, :, (self.args.window_size - 1) - stack_frame
+                ] = state_set2[-1 - stack_frame]
+            state_stack = []
+            state_stack.append(state_stack1)
+            state_stack.append(state_stack2)
+            state_set.append(state_set1)
+            state_set.append(state_set2)
         return state_stack, state_set
 
         # Resize input information
 
     def resize_input(self, state, state_set):
-        state_set.append(state)
+
         if self.args.is_cnn == 0:
+            state_set.append(state)
             state_stack = np.zeros((1, self.args.lstm_input_length, self.args.window_size))
             for stack_frame in range(self.args.window_size):
                 state_stack[:, :, (self.args.window_size - 1) - stack_frame] = state_set[-1 - stack_frame]
-        else:
+            del state_set[0]
+        elif self.args.is_cnn == 1:
+            state_set.append(state)
             state_stack = np.zeros((1, self.args.input_shape[0], self.args.input_shape[1], self.args.window_size))
             for stack_frame in range(self.args.window_size):
                 state_stack[:, :, :, (self.args.window_size - 1) - stack_frame] = state_set[-1 - stack_frame]
-        del state_set[0]
+            del state_set[0]
+        else:
+            state_set[0].append(state[0])
+            state_stack1 = np.zeros((1, self.args.lstm_input_length, self.args.window_size))
+            for stack_frame in range(self.args.window_size):
+                state_stack1[:, :, (self.args.window_size - 1) - stack_frame] = state_set[0][-1 - stack_frame]
+            del state_set[0][0]
+            state_set[1].append(state[1])
+            state_stack2 = np.zeros((1, self.args.input_shape[0], self.args.input_shape[1], self.args.window_size))
+            for stack_frame in range(self.args.window_size):
+                state_stack2[:, :, :, (self.args.window_size - 1) - stack_frame] = state_set[1][-1 - stack_frame]
+            del state_set[1][0]
+            state_stack = []
+            state_stack.append(state_stack1)
+            state_stack.append(state_stack2)
         return state_stack, state_set
 
 
@@ -311,6 +350,7 @@ class DQNAgent():
 
 
             self._memory.append(state_stack, action, reward, next_state_stack, is_terminal)  # 插入数据
+            self._memory.append(state_stack, action, reward, next_state_stack, is_terminal)  # 插入数据
             state_stack = next_state_stack
             if self._epsilon > EPSILON_END:
                 self._epsilon += self._epsilon_increment
@@ -322,8 +362,8 @@ class DQNAgent():
                 old_state_list, action_list, reward_list, new_state_list, is_terminal_list \
                     = self._memory.sample(self._batch_size, self.args.is_cnn)
 
-            feed_dict = {self._target_model['input_frames']: new_state_list.astype(np.float32) / 255.0,
-                         self._eval_model['input_frames']: old_state_list.astype(np.float32) / 255.0,
+            feed_dict = {self._target_model['input_frames']: np.array(new_state_list, dtype = np.float32) / 255.0,
+                         self._eval_model['input_frames']: np.array(old_state_list, dtype=np.float32) / 255.0,
                          self._action_ph: list(enumerate(action_list)),
                          self._reward_ph: np.array(reward_list).astype(np.float32),
                          self._is_terminal_ph: np.array(is_terminal_list).astype(np.float32),

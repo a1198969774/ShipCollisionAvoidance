@@ -23,15 +23,28 @@ class ReplayMemory():
         self._memory.append((old_state,action,reward,new_state,is_terminal))
 
     def sample(self,batch_size, is_cnn, indexes=None):
-
         samples = random.sample(self._memory,min(batch_size,len(self._memory)))
         zipped = list(zip(*samples))
         if is_cnn == 1:
             zipped[0] = np.reshape(zipped[0],(-1,self._WIDTH,self._HEIGHT,self._window_size))
             zipped[3] = np.reshape(zipped[3],(-1,self._WIDTH,self._HEIGHT,self._window_size))
-        else:
+        elif is_cnn == 0:
             zipped[0] = np.reshape(zipped[0], (-1, self._lstm_input_length, self._window_size))
             zipped[3] = np.reshape(zipped[3], (-1, self._lstm_input_length, self._window_size))
+        else:
+            state1 = np.reshape([zipped[0][i][0] for i in range(min(batch_size,len(self._memory)))], (-1, self._lstm_input_length, self._window_size))
+            state2 = np.reshape([zipped[0][i][1] for i in range(min(batch_size,len(self._memory)))], (-1, self._WIDTH, self._HEIGHT, self._window_size))
+            new_state = []
+            new_state.append(state1)
+            new_state.append(state2)
+            zipped[0] = new_state
+
+            state1 = np.reshape([zipped[3][i][0] for i in range(min(batch_size,len(self._memory)))], (-1, self._lstm_input_length, self._window_size))
+            state2 = np.reshape([zipped[3][i][1] for i in range(min(batch_size,len(self._memory)))], (-1, self._WIDTH, self._HEIGHT, self._window_size))
+            new_state = []
+            new_state.append(state1)
+            new_state.append(state2)
+            zipped[3] = new_state
         return zipped
 
 
@@ -80,9 +93,23 @@ class PriorityExperienceReplay():
         if is_cnn == 1:
             zipped[0] = np.reshape(zipped[0],(-1,self._WIDTH,self._HEIGHT,self._window_size))
             zipped[3] = np.reshape(zipped[3],(-1,self._WIDTH,self._HEIGHT,self._window_size))
-        else:
+        elif is_cnn == 0:
             zipped[0] = np.reshape(zipped[0], (-1, self._lstm_input_length, self._window_size))
             zipped[3] = np.reshape(zipped[3], (-1, self._lstm_input_length, self._window_size))
+        else:
+            state1 = np.reshape([zipped[0][i][0] for i in range(min(batch_size,len(self._memory)))], (-1, self._lstm_input_length, self._window_size))
+            state2 = np.reshape([zipped[0][i][1] for i in range(min(batch_size,len(self._memory)))], (-1, self._WIDTH, self._HEIGHT, self._window_size))
+            new_state = []
+            new_state.append(state1)
+            new_state.append(state2)
+            zipped[0] = new_state
+
+            state1 = np.reshape([zipped[3][i][0] for i in range(min(batch_size,len(self._memory)))], (-1, self._lstm_input_length, self._window_size))
+            state2 = np.reshape([zipped[3][i][1] for i in range(min(batch_size,len(self._memory)))], (-1, self._WIDTH, self._HEIGHT, self._window_size))
+            new_state = []
+            new_state.append(state1)
+            new_state.append(state2)
+            zipped[3] = new_state
         sum_p,count = self.tree.total_and_count()
 
         return zipped,idx_batch,p_batch,sum_p,count

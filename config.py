@@ -5,7 +5,7 @@ class Config:
     parser = argparse.ArgumentParser(description='Run DQN ')
     parser.add_argument('--env', default='SpaceInvaders-v0')
     parser.add_argument('--seed', default=520, type=int)
-    parser.add_argument('--input_shape', default=(200, 200))
+    parser.add_argument('--input_shape', default=(500, 500))
     parser.add_argument('--lstm_input_length', default=6)
     parser.add_argument('--gamma', default=0.99)
     parser.add_argument('--max_step', default=1500)
@@ -23,7 +23,7 @@ class Config:
     parser.add_argument('--is_distributional', default=0, type=int)
     parser.add_argument('--num_step', default=1, type=int) #Num Step for multi-step DQN, 3 is recommended
     parser.add_argument('--is_noisy', default=0, type=int)
-    parser.add_argument('--is_cnn', default=0, type=int)
+    parser.add_argument('--is_cnn', default=2, type=int)
     parser.add_argument('--self_speed', default=5.14)
     parser.add_argument('--self_heading', default=0)
     parser.add_argument('--target_speed', default=6.168)

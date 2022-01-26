@@ -34,8 +34,11 @@ class envModel(gym.Env):
         self.action = 0
 
         self.d_min = 50
-        self.reset()
         self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
+        self.obs_num = 5
+
+
+        self.reset()
 
 
     def type_encounter(agent_x, agent_y, agent_angle):
@@ -244,6 +247,8 @@ class envModel(gym.Env):
         self.ships.append(self.selfship)
         self.ships.append(self.obship1)
         self.goal = self.randgoal()
+
+        self.randobs(self.obs_num)
         # 更新观察数据
         self.state = np.vstack([ship.state for (_, ship) in enumerate(self.ships)])
 
@@ -261,6 +266,28 @@ class envModel(gym.Env):
         # 返回
         return self.goal
 
+    def randobs(self, num):
+        obs = [] # x,y,r,t
+        while num != 0:
+            type_num = np.random.randint(2) # 0: circle 1: square
+            r_num = np.random.randint(200, 400)
+            if type_num == 1:
+                r_num *= 2
+            x_num = np.random.randint(r_num * 4, 10000 - r_num * 8)
+            y_num = np.random.randint(r_num * 4, 10000 - r_num * 4)
+            if type_num == 0 and math.sqrt((5000 - x_num) ** 2 + (
+                            6500 - y_num) ** 2) < r_num:
+                pass
+            elif type_num == 1 and 6500 < y_num and 6500 > y_num - r_num and 5000 > x_num and 5000 < x_num + r_num:
+                pass
+            else:
+                obs.append(x_num)
+                obs.append(y_num)
+                obs.append(r_num)
+                obs.append("circle" if type_num == 0 else "square")
+                self.obs_list.append(obs)
+                num -= 1
+                obs = []
     def getRelAngle(self):
         angle = abs(math.atan2((self.goal[1] - self.selfship.state[1]),
                        (self.goal[0] - self.selfship.state[0]))) / math.pi * 180
@@ -423,6 +450,26 @@ class envModel(gym.Env):
             reward = reward - 10
             print("Get -10 reward------obstacle")
             self.is_terminal = True
+
+        for item in self.obs_list:
+            _x, _y, _r, _t = item[0], item[1], item[2], item[3]
+            if _t == "circle":
+                if math.sqrt((self.selfship.state[0] - _x) ** 2 +(self.selfship.state[1] - _y) ** 2) < _r:
+                    reward_list.append(-10)
+                    reward = reward - 10
+                    print("Get -10 reward------obstacle")
+                    self.is_terminal = True
+            if _t == "square":
+                # 上 下 左 右
+                y1 = _y
+                y2 = _y - _r
+                x3 = _x
+                x4 = _x + _r
+                if self.selfship.state[1] <= y1 and self.selfship.state[1] >= y2 and self.selfship.state[0] > x3 and self.selfship.state[0] < x4:
+                    reward_list.append(-10)
+                    reward = reward - 10
+                    print("Get -10 reward------obstacle")
+                    self.is_terminal = True
         # 到达目标点有正的奖励
         if self.d < self.d_min:
             reward_list.append(20)
@@ -430,27 +477,10 @@ class envModel(gym.Env):
             print("Get 20 reward------goal point!!!!!!")
             self.is_terminal = True
 
-        # if self.is_terminal == False:
-        #     for i in range(1):
-        #         if not self.ship.judge_point(self.obs_pos[i][0], self.obs_pos[i][1]):
-        #             reward_list.append(-5)
-        #             print("Obstacle!!!!!")
-        #             self.done_list = True  # 终止
-        #             break
-        #         else:
-        #             self.done_list = False
-        #         if not self.ship.judge_point(self.obs_robot_state[0][0], self.obs_robot_state[0][1]):
-        #             reward_list.append(-5)
-        #             print("Obstacle!!!!!")
-        #             self.ship.show()
-        #             self.done_list = True  # 终止
-        #             break
-        #         else:
-        #             self.done_list = False
+
 
         return reward, reward_list, self.is_terminal
-        # 与动态障碍发生碰撞
-        # 动态障碍为边长0.8m的正方体
+
 
     def test_state(self,state):
         total = 0
@@ -512,8 +542,7 @@ class envModel(gym.Env):
             self.old_state = self.new_state[:] if self.new_state is not None else None
             # self.new_state = image_matrix.reshape((1, self.args.input_shape[0], self.args.input_shape[1], 1))
             self.new_state = image_matrix
-        else:
-            array = self.render(mode='rgb_array')
+        elif self.args.is_cnn == 0:
             state = []
             state.append(self.rel_angle)
             state.append(self.rel_angle_last)
@@ -525,7 +554,28 @@ class envModel(gym.Env):
             # self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
             self.new_state = state
         #self.test_state2(self.new_state)
+        else:
+            state = []
+            state1 = []
+            state1.append(self.rel_angle)
+            state1.append(self.rel_angle_last)
+            state1.append(self.selfship.roll_state[2])
+            state1.append(self.selfship.last_roll_state[2])
+            state1.append(self.rel_obs1_angle)
+            state1.append(self.rel_obs1_angle_last)
+            state.append(state1)
 
+            if self.viewer != None:
+                array = self.render(mode='rgb_array')
+            else:
+                array = np.zeros((1000,1000,3))
+            image_matrix = np.uint8(array)
+            image_matrix = cv2.cvtColor(image_matrix, cv2.COLOR_RGB2GRAY)
+            image_matrix = cv2.resize(image_matrix, (self.args.input_shape[0], self.args.input_shape[1]))
+            state.append(image_matrix)
+
+            self.old_state = self.new_state[:] if self.new_state is not None else None
+            self.new_state = state
         reward, sub_reward, is_terminal= self.getreward()
         # new_state = np.random.rand(1, 80, 80, 4)
         # new_state = old_state
@@ -541,24 +591,21 @@ class envModel(gym.Env):
 
         for ship in self.ships:
             if ship.type == SHIP_TYPE_SELF:
-                self.draw_circle(ship.state[0] * self.scale, ship.state[1] * self.scale, 5, (0, 0, 255))
+                self.draw_square(ship.state[0] * self.scale, ship.state[1] * self.scale, 50 * self.scale, (0, 0, 255))
             else:
-                self.draw_circle(ship.state[0] * self.scale, ship.state[1] * self.scale, 5, (0, 0, 0))
+                self.draw_circle(ship.state[0] * self.scale, ship.state[1] * self.scale, 50 * self.scale, (0, 0, 0))
 
 
         for item in self.obs_list:
             _x, _y, _r, _t = item[0], item[1], item[2], item[3]
             if _t == "circle":
-                self.draw_circle(_x * self.scale, _y * self.scale, 5, (0, 0, 0))
+                self.draw_circle(_x * self.scale, _y * self.scale, _r * self.scale, (0, 0, 0))
+            if _t == "square":
+                self.draw_square(_x * self.scale, _y * self.scale, _r * self.scale, (0, 0, 0))
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
     def draw_circle(self, x, y, r, c):
-        # assert isinstance(self.viewer, rendering.Viewer)
-        #
-        # transform = rendering.Transform()
-        # transform.set_translation(x, y)
-        # self.viewer.draw_circle(r, 30, color=c).add_attr(transform)
-        # 画一个半径为 的园
+        # 画一个半径为 的圆
         circle = rendering.make_circle(r)
         # 添加一个平移操作
         circle_transform = rendering.Transform(translation=(x, y))
@@ -567,11 +614,15 @@ class envModel(gym.Env):
         circle.set_color(c[0],c[1],c[2])
         self.viewer.add_geom(circle)
 
-
-
-
-    def close(self):
-        pass
+    def draw_square(self, x, y, r, c):
+        # 画一个矩形 左下 右下 右上 左上
+        square = rendering.make_polygon([(x , y - r), (x + r, y - r), (x + r, y), (x, y)], True)
+        # 添加一个平移操作
+        square_transform = rendering.Transform(translation=(0, 0))
+        # 让圆添加平移这个属性
+        square.add_attr(square_transform)
+        square.set_color(c[0],c[1],c[2])
+        self.viewer.add_geom(square)
 
 class Ship():
     def __init__(self, x: np.float32, y: np.float32,speed: np.float32,heading: np.float32, t: np.int, type: np.int):

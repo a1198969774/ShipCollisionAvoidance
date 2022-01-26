@@ -8,7 +8,7 @@ import PIL
 
 from env import envModel
 from replayMemory import ReplayMemory, PriorityExperienceReplay
-from model import create_deep_q_network, create_duel_q_network, create_model, create_distributional_model,create_conv_network,create_lstm_network
+from model import create_deep_q_network, create_duel_q_network, create_model, create_distributional_model, create_conv_network, create_lstm_network, create_lstm_conv_network
 from agent import DQNAgent
 from config import Config
 
@@ -76,7 +76,12 @@ def main():
 
     create_model_fn = create_model if args.is_distributional == 0 else create_distributional_model
 
-    create_network_cnn_or_lstm = create_conv_network if args.is_cnn == 1 else create_lstm_network
+    if args.is_cnn == 1:
+        create_network_cnn_or_lstm = create_conv_network
+    elif args.is_cnn == 0:
+        create_network_cnn_or_lstm = create_lstm_network
+    else:
+        create_network_cnn_or_lstm = create_lstm_conv_network
     noisy = True if args.is_noisy == 1 else False
 
     eval_model,eval_params = create_model_fn(args.window_size, args.is_cnn, args.input_shape, args.lstm_input_length, num_actions,
