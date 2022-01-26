@@ -37,6 +37,7 @@ class envModel(gym.Env):
         self.reset()
         self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
 
+
     def type_encounter(agent_x, agent_y, agent_angle):
         k1 = math.tan(agent_angle)
         b1 = agent_y - k1 * agent_x
@@ -230,7 +231,7 @@ class envModel(gym.Env):
     def reset(self):
         # 管理所有船的列表， reset时先清空
         self.ships = []
-
+        self.obs_list = []
         # # 随机生成MAX_SHIP_NUM - 1个其它船
         # for i in range(MAX_SHIP_NUM - 1):
         #     self.ships.append(self.randship(SHIP_TYPE_OTHER, encounter_type))
@@ -512,6 +513,7 @@ class envModel(gym.Env):
             # self.new_state = image_matrix.reshape((1, self.args.input_shape[0], self.args.input_shape[1], 1))
             self.new_state = image_matrix
         else:
+            array = self.render(mode='rgb_array')
             state = []
             state.append(self.rel_angle)
             state.append(self.rel_angle_last)
@@ -536,31 +538,34 @@ class envModel(gym.Env):
         if self.viewer is None:
             self.viewer = rendering.Viewer(VIEWPORT_W , VIEWPORT_H )
 
-        # 渲染所有的船
-        for item in self.state:
-            # 从状态中获取坐标、分数、类型
-            _x, _y, _s, _t = item[0] * self.scale, item[1] * self.scale, item[2], item[3]
 
-            # # transform用于控制物体位置、缩放等
-            # transform = rendering.Transform()
-            # transform.set_translation(_x , _y )
-            #
-            # # 添加一个⚪，来表示船
-            # # 中心点: (x, y)
-            # # 半径:
-            # # 颜色: 其它船为蓝色、agent船为红/紫色
-            # self.viewer.draw_circle(10, 30, color=(0, 0, 255)).add_attr(transform)
-            self.draw_circle(_x, _y, 5, (0, 0, 255))
-            # self.draw_circle(500, 500, 500, (0, 0, 255))
-        # 然后直接渲染（没有考虑性能）
+        for ship in self.ships:
+            if ship.type == SHIP_TYPE_SELF:
+                self.draw_circle(ship.state[0] * self.scale, ship.state[1] * self.scale, 5, (0, 0, 255))
+            else:
+                self.draw_circle(ship.state[0] * self.scale, ship.state[1] * self.scale, 5, (0, 0, 0))
+
+
+        for item in self.obs_list:
+            _x, _y, _r, _t = item[0], item[1], item[2], item[3]
+            if _t == "circle":
+                self.draw_circle(_x * self.scale, _y * self.scale, 5, (0, 0, 0))
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 
     def draw_circle(self, x, y, r, c):
-        assert isinstance(self.viewer, rendering.Viewer)
-
-        transform = rendering.Transform()
-        transform.set_translation(x, y)
-        self.viewer.draw_circle(r, 30, color=c).add_attr(transform)
+        # assert isinstance(self.viewer, rendering.Viewer)
+        #
+        # transform = rendering.Transform()
+        # transform.set_translation(x, y)
+        # self.viewer.draw_circle(r, 30, color=c).add_attr(transform)
+        # 画一个半径为 的园
+        circle = rendering.make_circle(r)
+        # 添加一个平移操作
+        circle_transform = rendering.Transform(translation=(x, y))
+        # 让圆添加平移这个属性
+        circle.add_attr(circle_transform)
+        circle.set_color(c[0],c[1],c[2])
+        self.viewer.add_geom(circle)
 
 
 
