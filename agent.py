@@ -171,8 +171,12 @@ class DQNAgent():
         if np.random.rand() < epsilon:
             action = np.random.randint(0,14) * 5 -35
         else:
-            state = state.astype(np.float32) / 255.0
-            feed_dict = {model['input_frames'] :state}
+            if self.args.is_cnn == 2:
+                feed_dict = {model['input_frames1']: np.array(state[0], dtype=np.float32) / 255.0,
+                             model['input_frames2']: np.array(state[1], dtype=np.float32) / 255.0,}
+            else:
+                feed_dict = {model['input_frames'] : np.array(state, dtype=np.float32) / 255.0}
+
             action = sess.run(model['action'],feed_dict=feed_dict)[0] * 5 -35
         if self.last_action * action >= 0:
             self.action =action
@@ -180,8 +184,11 @@ class DQNAgent():
             if np.random.rand() < epsilon:
                 action = np.random.randint(0, 14) * 5 - 35
             else:
-                state = state.astype(np.float32) / 255.0
-                feed_dict = {model['input_frames']: state}
+                if self.args.is_cnn == 2:
+                    feed_dict = {model['input_frames1']: np.array(state[0], dtype=np.float32) / 255.0,
+                                 model['input_frames2']: np.array(state[1], dtype=np.float32) / 255.0, }
+                else:
+                    feed_dict = {model['input_frames']: np.array(state, dtype=np.float32) / 255.0}
                 action = sess.run(model['action'], feed_dict=feed_dict)[0] * 5 - 35
         return action
 
@@ -350,7 +357,6 @@ class DQNAgent():
 
 
             self._memory.append(state_stack, action, reward, next_state_stack, is_terminal)  # 插入数据
-            self._memory.append(state_stack, action, reward, next_state_stack, is_terminal)  # 插入数据
             state_stack = next_state_stack
             if self._epsilon > EPSILON_END:
                 self._epsilon += self._epsilon_increment
@@ -361,14 +367,22 @@ class DQNAgent():
             else:
                 old_state_list, action_list, reward_list, new_state_list, is_terminal_list \
                     = self._memory.sample(self._batch_size, self.args.is_cnn)
-
-            feed_dict = {self._target_model['input_frames']: np.array(new_state_list, dtype = np.float32) / 255.0,
-                         self._eval_model['input_frames']: np.array(old_state_list, dtype=np.float32) / 255.0,
-                         self._action_ph: list(enumerate(action_list)),
-                         self._reward_ph: np.array(reward_list).astype(np.float32),
-                         self._is_terminal_ph: np.array(is_terminal_list).astype(np.float32),
-                         }
-
+            if self.args.is_cnn == 2:
+                feed_dict = {self._target_model['input_frames1']: np.array(new_state_list[0], dtype = np.float32) / 255.0,
+                             self._target_model['input_frames2']: np.array(new_state_list[1], dtype=np.float32) / 255.0,
+                             self._eval_model['input_frames1']: np.array(old_state_list[0], dtype=np.float32) / 255.0,
+                             self._eval_model['input_frames2']: np.array(old_state_list[1], dtype=np.float32) / 255.0,
+                             self._action_ph: list(enumerate(action_list)),
+                             self._reward_ph: np.array(reward_list).astype(np.float32),
+                             self._is_terminal_ph: np.array(is_terminal_list).astype(np.float32),
+                             }
+            else:
+                feed_dict = {self._target_model['input_frames']: np.array(new_state_list, dtype=np.float32) / 255.0,
+                             self._eval_model['input_frames']: np.array(old_state_list, dtype=np.float32) / 255.0,
+                             self._action_ph: list(enumerate(action_list)),
+                             self._reward_ph: np.array(reward_list).astype(np.float32),
+                             self._is_terminal_ph: np.array(is_terminal_list).astype(np.float32),
+                             }
             if self._is_double_dqn:
                 # rnn_out = sess.run(self._eval_model['rnn_out'], feed_dict={
                 #     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
@@ -378,8 +392,13 @@ class DQNAgent():
                 #     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
                 # q_network = sess.run(self._eval_model['q_values'], feed_dict={
                 #     self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
-                action_chosen_by_online = sess.run(self._eval_model['action'], feed_dict={
-                    self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
+                if self.args.is_cnn == 2:
+                    action_chosen_by_online = sess.run(self._eval_model['action'], feed_dict={
+                        self._eval_model['input_frames1']: new_state_list[0].astype(np.float32) / 255.0,
+                        self._eval_model['input_frames2']: new_state_list[1].astype(np.float32) / 255.0})
+                else:
+                    action_chosen_by_online = sess.run(self._eval_model['action'], feed_dict={
+                        self._eval_model['input_frames']: new_state_list.astype(np.float32) / 255.0})
                 feed_dict[self._action_chosen_by_eval_ph] = list(enumerate(action_chosen_by_online))
 
             if self._is_per == 1:
@@ -405,7 +424,6 @@ class DQNAgent():
                 num_success += 1
             if step_for_newenv == self.args.max_step:
                 is_terminal = True
-
             if is_terminal:
                 # showPath
                 # self.save_model()
@@ -418,12 +436,13 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if step_for_newenv < self.args.max_step:
+                if step_for_newenv < self.args.max_step or self.episode % 10 == 0 :
                     plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(x_obs_list, y_obs_list)
                     plt.plot(goal[0], goal[1], marker='v')
                     plt.plot(x_list[0], y_list[0], marker='v')
+
                     #plt.show()
                     plt.xlim(1500, 8500)
                     plt.ylim(0, 7000)

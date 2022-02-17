@@ -17,7 +17,7 @@ ENCOUNTER = 1
 CROSS_LEFT = 2
 CROSS_RIGHT = 3
 OVERTAKE = 4
-encounter_type = OVERTAKE
+encounter_type = CROSS_RIGHT
 class envModel(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -34,10 +34,10 @@ class envModel(gym.Env):
         self.action = 0
 
         self.d_min = 50
-        self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
+
         self.obs_num = 5
 
-
+        self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
         self.reset()
 
 
@@ -233,6 +233,12 @@ class envModel(gym.Env):
 
     def reset(self):
         # 管理所有船的列表， reset时先清空
+        # if self.viewer is not None:
+        #     del self.viewer
+        #
+        self.viewer.close()
+        self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
+
         self.ships = []
         self.obs_list = []
         # # 随机生成MAX_SHIP_NUM - 1个其它船
@@ -241,11 +247,11 @@ class envModel(gym.Env):
 
         # 生成agent
         self.selfship = self.randship(SHIP_TYPE_SELF, encounter_type)
+        self.ships.append(self.selfship)
 
         self.obship1 = self.randship(SHIP_TYPE_OTHER, encounter_type)
-        # 把agent加入管理列表
-        self.ships.append(self.selfship)
         self.ships.append(self.obship1)
+
         self.goal = self.randgoal()
 
         self.randobs(self.obs_num)
@@ -273,12 +279,17 @@ class envModel(gym.Env):
             r_num = np.random.randint(200, 400)
             if type_num == 1:
                 r_num *= 2
-            x_num = np.random.randint(r_num * 4, 10000 - r_num * 8)
-            y_num = np.random.randint(r_num * 4, 10000 - r_num * 4)
+            x_num = np.random.randint(r_num * 3, 10000 - r_num * 6)
+            y_num = np.random.randint(r_num * 2, 10000 - r_num * 2)
             if type_num == 0 and math.sqrt((5000 - x_num) ** 2 + (
                             6500 - y_num) ** 2) < r_num:
                 pass
             elif type_num == 1 and 6500 < y_num and 6500 > y_num - r_num and 5000 > x_num and 5000 < x_num + r_num:
+                pass
+            elif type_num == 0 and math.sqrt((5000 - x_num) ** 2 + (
+                            1000 - y_num) ** 2) < r_num:
+                pass
+            elif type_num == 1 and 1000 < y_num and 1000 > y_num - r_num and 5000 > x_num and 5000 < x_num + r_num:
                 pass
             else:
                 obs.append(x_num)
@@ -311,7 +322,7 @@ class envModel(gym.Env):
         if ship_type == SHIP_TYPE_SELF:
             _b = Ship(5000, 1000, self.args.self_speed, self.args.self_heading, ship_type, type)
         else:
-            obs1_x, obs1_y, obs1_angle, obs1_speed = self.switch.get("overtake")(5000, 1000, math.pi / 2)
+            obs1_x, obs1_y, obs1_angle, obs1_speed = self.switch.get("cross_right")(5000, 1000, math.pi / 2)
             _b = Ship(obs1_x, obs1_y, self.args.self_speed, self.angleToHeading(obs1_angle), ship_type,type)
         return _b
 

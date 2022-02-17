@@ -4,7 +4,7 @@ import argparse
 class Config:
     parser = argparse.ArgumentParser(description='Run DQN ')
     parser.add_argument('--env', default='SpaceInvaders-v0')
-    parser.add_argument('--seed', default=520, type=int)
+    parser.add_argument('--seed', default=521, type=int)
     parser.add_argument('--input_shape', default=(500, 500))
     parser.add_argument('--lstm_input_length', default=6)
     parser.add_argument('--gamma', default=0.99)

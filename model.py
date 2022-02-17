@@ -34,7 +34,7 @@ def create_lstm_network(input_frames,trainable):
     return flat_output2, len(rnn_out) * Num_cellState, [cell], rnn_out
 
 def create_lstm_conv_network(input_frames,trainable):
-    conv1_W = tf.get_variable(shape=[8, 8, 1, 16], name='conv1_W',  ## 4-1
+    conv1_W = tf.get_variable(shape=[8, 8, 4, 16], name='conv1_W',  ## 4-1
                               trainable=trainable, initializer=tf.contrib.layers.xavier_initializer())
     conv1_b = tf.Variable(tf.zeros([16], dtype=tf.float32),
                           name='conv1_b', trainable=trainable)
@@ -155,9 +155,13 @@ def create_model(window, is_cnn, input_shape, input_length, num_actions,model_na
     with tf.variable_scope(model_name):
         if is_cnn == 1:
             input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
+            input_frames1 = []
+            input_frames2 = []
         elif is_cnn ==0:
             input_frames = tf.placeholder(tf.float32, [None, input_length, window],
                                           name='input_frames')
+            input_frames1 = []
+            input_frames2 = []
         else:
             input_frames2 = tf.placeholder(tf.float32, [None, input_shape[0], input_shape[1], window],
                                           name='input_frames2')
@@ -174,6 +178,8 @@ def create_model(window, is_cnn, input_shape, input_length, num_actions,model_na
         model = {
             'q_values':q_network,
             'input_frames':input_frames,
+            'input_frames1': input_frames1,
+            'input_frames2': input_frames2,
             'mean_max_q':mean_max_q,
             'action':action,
             'out1': out1,
