@@ -23,7 +23,7 @@ class Config:
     parser.add_argument('--is_distributional', default=0, type=int)
     parser.add_argument('--num_step', default=1, type=int) #Num Step for multi-step DQN, 3 is recommended
     parser.add_argument('--is_noisy', default=0, type=int)
-    parser.add_argument('--is_cnn', default=2, type=int)
+    parser.add_argument('--is_cnn', default=0, type=int)
     parser.add_argument('--self_speed', default=5.14)
     parser.add_argument('--self_heading', default=0)
     parser.add_argument('--target_speed', default=6.168)

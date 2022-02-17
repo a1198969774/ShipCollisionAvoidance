@@ -442,7 +442,7 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if step_for_newenv < self.args.max_step or self.episode % 10 == 0 :
+                if total_reward>10 and step_for_newenv < self.args.max_step or self.episode % 10 == 0 :
                     plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(x_obs_list, y_obs_list)

@@ -35,7 +35,7 @@ class envModel(gym.Env):
 
         self.d_min = 50
 
-        self.obs_num = 5
+        self.obs_num = 0
 
         self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
         self.reset()
