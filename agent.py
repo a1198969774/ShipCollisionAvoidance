@@ -215,11 +215,11 @@ class DQNAgent():
         trainable_variables = tf.trainable_variables()
         # network lstm variables
         trainable_variables_network = [
-            var for var in trainable_variables if var.name.startswith('network')]
+            var for var in trainable_variables if var.name.startswith('eval_model')]
 
         # target lstm variables
         trainable_variables_target = [
-            var for var in trainable_variables if var.name.startswith('target')]
+            var for var in trainable_variables if var.name.startswith('target_model')]
         count = 0
         for i in range(len(trainable_variables_network)):
             sess.run(
