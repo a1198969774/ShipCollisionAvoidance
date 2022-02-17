@@ -212,23 +212,29 @@ class DQNAgent():
 
     def assign_network_to_target(self, sess):
         # Get trainable variables
-        trainable_variables = tf.trainable_variables()
+        # trainable_variables = tf.trainable_variables()
+        trainable_variables = tf.get_collection(tf.GraphKeys.VARIABLES)
         # network lstm variables
+        # trainable_variables_network = [
+        #     var for var in trainable_variables if var.name.startswith('eval_model')]
+        #
+        # # target lstm variables
+        # trainable_variables_target = [
+        #     var for var in trainable_variables if var.name.startswith('target_model')]
+
         trainable_variables_network = [
-            var for var in trainable_variables if var.name.startswith('eval_model')]
+            var for var in trainable_variables if var.name.startswith('eval_model') and (not var.name.endswith('Prop:0') and not var.name.endswith('Prop_1:0'))]
 
         # target lstm variables
         trainable_variables_target = [
-            var for var in trainable_variables if var.name.startswith('target_model')]
-        count = 0
+            var for var in trainable_variables if var.name.startswith('target_model') and (not var.name.endswith('Prop:0') and not var.name.endswith('Prop_1:0'))]
+
         for i in range(len(trainable_variables_network)):
             sess.run(
                 tf.assign(
                     trainable_variables_target[i],
                     trainable_variables_network[i]))
-            count += 1
 
-        print(count)
 
     def save_model(self, sess, saver, network_name):
         # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time + "/model.ckpt")

@@ -87,8 +87,10 @@ def main():
     eval_model,eval_params = create_model_fn(args.window_size, args.is_cnn, args.input_shape, args.lstm_input_length, num_actions,
                                              'eval_model',create_network_fn, create_network_cnn_or_lstm,trainable=True,noisy=noisy)
     target_model,target_params = create_model_fn(args.window_size, args.is_cnn, args.input_shape, args.lstm_input_length, num_actions,
-                                                 'target_model',create_network_fn,create_network_cnn_or_lstm,trainable=False,noisy=noisy)
+                                                 'target_model',create_network_fn,create_network_cnn_or_lstm,trainable=True,noisy=noisy)
 
+    del eval_params
+    del target_params
     # update_target_params_ops = [t.assign(s) for s,t in zip(eval_params,target_params)]
 
     agent = DQNAgent(eval_model,
