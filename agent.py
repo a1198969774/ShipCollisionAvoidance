@@ -426,8 +426,7 @@ class DQNAgent():
                 # sess.run(self._update_target_params_ops)
                 self.assign_network_to_target(sess)
             step_for_newenv = step_for_newenv + 1
-            if is_terminal == True:
-                num_success += 1
+
             if step_for_newenv == self.args.max_step:
                 is_terminal = True
             if is_terminal:
@@ -443,6 +442,9 @@ class DQNAgent():
                 # plt.plot(plot_action_list)
                 # plt.show()
                 if total_reward>10 and step_for_newenv < self.args.max_step or self.episode % 10 == 0 :
+
+                    num_success += 1
+
                     plt.close()
                     plt.plot(x_list, y_list)
                     plt.plot(x_obs_list, y_obs_list)

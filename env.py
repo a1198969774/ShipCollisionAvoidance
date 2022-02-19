@@ -33,7 +33,7 @@ class envModel(gym.Env):
         self.args.input_shape = tuple(self.args.input_shape)
         self.action = 0
 
-        self.d_min = 50
+        self.d_min = 200
 
         self.obs_num = 0
 

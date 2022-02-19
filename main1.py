@@ -85,9 +85,9 @@ def main():
     noisy = True if args.is_noisy == 1 else False
 
     eval_model,eval_params = create_model_fn(args.window_size, args.is_cnn, args.input_shape, args.lstm_input_length, num_actions,
-                                             'eval_model',create_network_fn, create_network_cnn_or_lstm,trainable=True,noisy=noisy)
+                                             'eval_model',create_network_fn, create_network_cnn_or_lstm,trainable=True, noisy=noisy)
     target_model,target_params = create_model_fn(args.window_size, args.is_cnn, args.input_shape, args.lstm_input_length, num_actions,
-                                                 'target_model',create_network_fn,create_network_cnn_or_lstm,trainable=True,noisy=noisy)
+                                                 'target_model',create_network_fn,create_network_cnn_or_lstm,trainable=False, noisy=noisy)
 
     del eval_params
     del target_params
