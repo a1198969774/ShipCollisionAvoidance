@@ -213,7 +213,8 @@ class DQNAgent():
     def assign_network_to_target(self, sess):
         # Get trainable variables
         # trainable_variables = tf.trainable_variables()
-        trainable_variables = tf.get_collection(tf.GraphKeys.VARIABLES)
+        # trainable_variables = tf.get_collection(tf.GraphKeys.VARIABLES)
+        trainable_variables = tf.global_variables()
         # network lstm variables
         # trainable_variables_network = [
         #     var for var in trainable_variables if var.name.startswith('eval_model')]
@@ -385,7 +386,7 @@ class DQNAgent():
             else:
                 feed_dict = {self._target_model['input_frames']: np.array(new_state_list, dtype=np.float32) / 255.0,
                              self._eval_model['input_frames']: np.array(old_state_list, dtype=np.float32) / 255.0,
-                             self._action_ph: list(enumerate(action_list)),
+                             self._action_ph: list((enumerate(np.divide(np.add(action_list, 35), 5)))),
                              self._reward_ph: np.array(reward_list).astype(np.float32),
                              self._is_terminal_ph: np.array(is_terminal_list).astype(np.float32),
                              }
@@ -441,7 +442,7 @@ class DQNAgent():
                 # plt.show()
                 # plt.plot(plot_action_list)
                 # plt.show()
-                if total_reward>10 and step_for_newenv < self.args.max_step or self.episode % 10 == 0 :
+                if total_reward>0 and step_for_newenv < self.args.max_step or self.episode % 10 == 0 :
 
                     num_success += 1
 

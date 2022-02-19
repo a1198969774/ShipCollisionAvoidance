@@ -157,7 +157,7 @@ def create_model(window, is_cnn, input_shape, input_length, num_actions,model_na
             input_frames = tf.placeholder(tf.float32,[None,input_shape[0],input_shape[1],window],name='input_frames')
             input_frames1 = []
             input_frames2 = []
-        elif is_cnn ==0:
+        elif is_cnn == 0:
             input_frames = tf.placeholder(tf.float32, [None, input_length, window],
                                           name='input_frames')
             input_frames1 = []
