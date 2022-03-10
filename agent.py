@@ -178,18 +178,18 @@ class DQNAgent():
                 feed_dict = {model['input_frames'] : np.array(state, dtype=np.float32) / 255.0}
 
             action = sess.run(model['action'],feed_dict=feed_dict)[0] * 5 -35
-        if self.last_action * action >= 0:
-            self.action =action
-        else:
-            if np.random.rand() < epsilon:
-                action = np.random.randint(0, 14) * 5 - 35
-            else:
-                if self.args.is_cnn == 2:
-                    feed_dict = {model['input_frames1']: np.array(state[0], dtype=np.float32) / 255.0,
-                                 model['input_frames2']: np.array(state[1], dtype=np.float32) / 255.0, }
-                else:
-                    feed_dict = {model['input_frames']: np.array(state, dtype=np.float32) / 255.0}
-                action = sess.run(model['action'], feed_dict=feed_dict)[0] * 5 - 35
+        # if self.last_action * action >= 0:
+        #     self.action =action
+        # else:
+        #     if np.random.rand() < epsilon:
+        #         action = np.random.randint(0, 14) * 5 - 35
+        #     else:
+        #         if self.args.is_cnn == 2:
+        #             feed_dict = {model['input_frames1']: np.array(state[0], dtype=np.float32) / 255.0,
+        #                          model['input_frames2']: np.array(state[1], dtype=np.float32) / 255.0, }
+        #         else:
+        #             feed_dict = {model['input_frames']: np.array(state, dtype=np.float32) / 255.0}
+        #         action = sess.run(model['action'], feed_dict=feed_dict)[0] * 5 - 35
         return action
 
     def get_multi_step_sample(self,env,sess,num_step,epsilon):

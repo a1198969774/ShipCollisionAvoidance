@@ -17,7 +17,7 @@ ENCOUNTER = 1
 CROSS_LEFT = 2
 CROSS_RIGHT = 3
 OVERTAKE = 4
-encounter_type = ENCOUNTER
+encounter_type = CROSS_LEFT
 class envModel(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -240,8 +240,8 @@ class envModel(gym.Env):
         # if self.viewer is not None:
         #     del self.viewer
         #
-        self.viewer.close()
-        self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
+        # self.viewer.close()
+        # self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
 
         self.ships = []
         self.obs_list = []
@@ -253,8 +253,8 @@ class envModel(gym.Env):
         self.selfship = self.randship(SHIP_TYPE_SELF, encounter_type)
         self.ships.append(self.selfship)
 
-        self.obship1 = self.randship(SHIP_TYPE_OTHER, encounter_type)
-        self.ships.append(self.obship1)
+        # self.obship1 = self.randship(SHIP_TYPE_OTHER, encounter_type)
+        # self.ships.append(self.obship1)
 
         self.goal = self.randgoal()
 
@@ -311,6 +311,8 @@ class envModel(gym.Env):
         return result
 
     def getObs1RelAngle(self):
+        if len(self.ships) == 1:
+            return 0
         angle = abs(math.atan2((self.obship1.state[1] - self.selfship.state[1]),
                        (self.obship1.state[0] - self.selfship.state[0]))) / math.pi * 180
         heading = self.angleToHeading(self.selfship.state[4])
@@ -410,7 +412,7 @@ class envModel(gym.Env):
         reward += r1
         reward_list.append(r1)
         # r2 目标船相对本船的方位
-        r2_value = 0.2 / 10
+        r2_value = 0.2 / 20
         r2_symble = 0
         if abs(self.rel_angle) < 0.1:
             r2_symble = 1
@@ -460,12 +462,12 @@ class envModel(gym.Env):
                 # reward_list.append(r4)
                 pass
 
-
-        if math.sqrt((self.selfship.state[0] - self.obship1.state[0]) ** 2 +(self.selfship.state[1] - self.obship1.state[1]) ** 2) < 555.6:
-            reward_list.append(-10)
-            reward = reward - 10
-            print("Get -10 reward------obstacle")
-            self.is_terminal = True
+        if len(self.ships)!= 1:
+            if math.sqrt((self.selfship.state[0] - self.obship1.state[0]) ** 2 +(self.selfship.state[1] - self.obship1.state[1]) ** 2) < 555.6:
+                reward_list.append(-10)
+                reward = reward - 10
+                print("Get -10 reward------obstacle")
+                self.is_terminal = True
 
         for item in self.obs_list:
             _x, _y, _r, _t = item[0], item[1], item[2], item[3]
@@ -560,12 +562,20 @@ class envModel(gym.Env):
             self.new_state = image_matrix
         elif self.args.is_cnn == 0:
             state = []
-            state.append(self.rel_angle)
-            state.append(self.rel_angle_last)
-            state.append(self.selfship.roll_state[2])
-            state.append(self.selfship.last_roll_state[2])
-            state.append(self.rel_obs1_angle)
-            state.append(self.rel_obs1_angle_last)
+            # state.append(self.rel_angle)
+            # state.append(self.rel_angle_last)
+            # state.append(self.selfship.roll_state[2])
+            # state.append(self.selfship.last_roll_state[2])
+            # state.append(self.rel_obs1_angle)
+            # state.append(self.rel_obs1_angle_last)
+            state.append(self.selfship.state[0])
+            state.append(self.selfship.state[1])
+            state.append(self.ships[0].state[0])
+            state.append(self.ships[0].state[1])
+            state.append(self.selfship.state[4])
+
+            state.append(self.ships[0].state[4])
+
             self.old_state = self.new_state[:] if self.new_state is not None else None
             # self.new_state = np.array(state).reshape((1,self.args.lstm_input_length,1))
             self.new_state = state
@@ -596,7 +606,7 @@ class envModel(gym.Env):
         # new_state = np.random.rand(1, 80, 80, 4)
         # new_state = old_state
 
-        return self.action, reward, self.new_state, is_terminal, sub_reward, self.selfship.state[0], self.selfship.state[1],self.selfship.state[4], self.obship1.state[0], self.obship1.state[1]
+        return self.action, reward, self.new_state, is_terminal, sub_reward, self.selfship.state[0], self.selfship.state[1],self.selfship.state[4], self.obship1.state[0] if len(self.ships) != 1 else 0, self.obship1.state[1] if len(self.ships) != 1 else 0
 
     def render(self, mode='human'):
         # 按照gym的方式创建一个viewer, 使用self.scale控制缩放大小
